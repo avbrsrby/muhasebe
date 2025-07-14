@@ -1,0 +1,53 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Kasa Hareketi Ekle{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3>Yeni Kasa Hareketi</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.kasa.label }}</label>
+                        {{ form.kasa }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.tip.label }}</label>
+                        {{ form.tip }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.tutar.label }}</label>
+                        <div class="input-group">
+                            {{ form.tutar }}
+                            <span class="input-group-text">₺</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.cari.label }}</label>
+                        {{ form.cari }}
+                        <small class="text-muted">Opsiyonel</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.aciklama.label }}</label>
+                        {{ form.aciklama }}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'kasa_list' %}" class="btn btn-secondary">İptal</a>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

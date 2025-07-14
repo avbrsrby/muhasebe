@@ -1,0 +1,63 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Stok Listesi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Stok Kartları</h1>
+    <a href="{% url 'stok_ekle' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Yeni Stok Ekle
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Stok Adı</th>
+                    <th>Barkod</th>
+                    <th>Birim</th>
+                    <th>Miktar</th>
+                    <th>Alış Fiyatı</th>
+                    <th>Satış Fiyatı</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stok in stoklar %}
+                <tr>
+                    <td>{{ stok.kod }}</td>
+                    <td>{{ stok.ad }}</td>
+                    <td>{{ stok.barkod|default:'-' }}</td>
+                    <td>{{ stok.birim }}</td>
+                    <td>
+                        {% if stok.miktar <= stok.kritik_stok %}
+                            <span class="text-danger">{{ stok.miktar|floatformat:2 }}</span>
+                            <i class="bi bi-exclamation-triangle text-danger" title="Kritik stok!"></i>
+                        {% else %}
+                            {{ stok.miktar|floatformat:2 }}
+                        {% endif %}
+                    </td>
+                    <td>{{ stok.alis_fiyati|floatformat:2 }} ₺</td>
+                    <td>{{ stok.satis_fiyati|floatformat:2 }} ₺</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-info">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">Henüz stok kartı bulunmamaktadır.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

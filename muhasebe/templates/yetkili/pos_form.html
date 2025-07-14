@@ -1,0 +1,77 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.kod.label }} <span class="text-danger">*</span></label>
+                            {{ form.kod }}
+                            {% if form.kod.errors %}
+                                <div class="text-danger">{{ form.kod.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.ad.label }} <span class="text-danger">*</span></label>
+                            {{ form.ad }}
+                            {% if form.ad.errors %}
+                                <div class="text-danger">{{ form.ad.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.banka.label }} <span class="text-danger">*</span></label>
+                            {{ form.banka }}
+                            {% if form.banka.errors %}
+                                <div class="text-danger">{{ form.banka.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.komisyon_orani.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">%</span>
+                                {{ form.komisyon_orani }}
+                            </div>
+                            {% if form.komisyon_orani.errors %}
+                                <div class="text-danger">{{ form.komisyon_orani.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">POS işlemlerinden kesilecek komisyon oranı</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.aktif }}
+                                <label class="form-check-label" for="{{ form.aktif.id_for_label }}">
+                                    {{ form.aktif.label }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'pos_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Geri
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

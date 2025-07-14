@@ -1,0 +1,206 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="cariHareketForm">
+                        {% csrf_token %}
+                        
+                        <!-- Tarih ve Cari -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tarih <span class="text-danger">*</span></label>
+                                {{ form.tarih }}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Cari <span class="text-danger">*</span></label>
+                                {{ form.cari }}
+                            </div>
+                        </div>
+
+                        <!-- Hareket Yönü ve İşlem Tipi -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Hareket Yönü <span class="text-danger">*</span></label>
+                                {{ form.hareket_yonu }}
+                                <small class="form-text text-muted">
+                                    Giriş: Cariden tahsilat | Çıkış: Cariye ödeme
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">İşlem Tipi <span class="text-danger">*</span></label>
+                                {{ form.islem_tipi }}
+                            </div>
+                        </div>
+
+                        <!-- Para Birimi ve Tutar -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Para Birimi <span class="text-danger">*</span></label>
+                                {{ form.para_birimi }}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Tutar <span class="text-danger">*</span></label>
+                                {{ form.tutar }}
+                            </div>
+                        </div>
+
+                        <!-- Dinamik Hesap Seçimi -->
+                        <div class="row mb-3">
+                            <div class="col-md-12" id="hesapSecimDiv" style="display: none;">
+                                <label class="form-label" id="hesapLabel">Hesap Seçin</label>
+                                <select class="form-select" id="hesapSelect" disabled>
+                                    <option value="">Önce para birimi ve işlem tipi seçin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Gizli alanlar -->
+                        <div style="display: none;">
+                            {{ form.kasa }}
+                            {{ form.banka }}
+                            {{ form.pos }}
+                        </div>
+
+                        <!-- Açıklama -->
+                        <div class="mb-3">
+                            <label class="form-label">Açıklama</label>
+                            {{ form.aciklama }}
+                        </div>
+
+                        <!-- Butonlar -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'cari_hareket_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Geri
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Select2 başlat
+    $('#id_cari').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Cari seçin...',
+        ajax: {
+            url: '{% url "cari_ara" %}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: 2
+    });
+
+    // İşlem tipi değiştiğinde
+    $('#id_islem_tipi, #id_para_birimi').change(function() {
+        var islemTipi = $('#id_islem_tipi').val();
+        var paraBirimiId = $('#id_para_birimi').val();
+        
+        if (islemTipi && paraBirimiId) {
+            $('#hesapSecimDiv').show();
+            $('#hesapSelect').prop('disabled', false);
+            
+            // Label güncelle
+            var label = '';
+            if (islemTipi === 'nakit') {
+                label = 'Kasa Seçin';
+            } else if (islemTipi === 'banka') {
+                label = 'Banka Seçin';
+            } else if (islemTipi === 'pos') {
+                label = 'POS Seçin';
+            }
+            $('#hesapLabel').text(label);
+            
+            // AJAX ile hesapları getir
+            $.ajax({
+                url: '{% url "kasa_banka_getir" %}',
+                data: {
+                    'para_birimi_id': paraBirimiId,
+                    'islem_tipi': islemTipi
+                },
+                success: function(data) {
+                    $('#hesapSelect').empty();
+                    $('#hesapSelect').append('<option value="">Seçin...</option>');
+                    
+                    $.each(data.items, function(index, item) {
+                        $('#hesapSelect').append(
+                            $('<option></option>').val(item.id).text(item.text)
+                        );
+                    });
+                }
+            });
+        } else {
+            $('#hesapSecimDiv').hide();
+            $('#hesapSelect').prop('disabled', true);
+        }
+    });
+
+    // Hesap seçildiğinde ilgili form alanını güncelle
+    $('#hesapSelect').change(function() {
+        var selectedId = $(this).val();
+        var islemTipi = $('#id_islem_tipi').val();
+        
+        // Tüm gizli alanları temizle
+        $('#id_kasa, #id_banka, #id_pos').val('');
+        
+        // İlgili alanı doldur
+        if (selectedId) {
+            if (islemTipi === 'nakit') {
+                $('#id_kasa').val(selectedId);
+            } else if (islemTipi === 'banka') {
+                $('#id_banka').val(selectedId);
+            } else if (islemTipi === 'pos') {
+                $('#id_pos').val(selectedId);
+            }
+        }
+    });
+
+    // Form gönderilmeden önce kontrol
+    $('#cariHareketForm').submit(function(e) {
+        var islemTipi = $('#id_islem_tipi').val();
+        var hesapSecim = $('#hesapSelect').val();
+        
+        if (islemTipi !== 'diger' && !hesapSecim) {
+            e.preventDefault();
+            alert('Lütfen bir hesap seçin!');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

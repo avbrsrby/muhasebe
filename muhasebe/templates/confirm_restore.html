@@ -1,0 +1,33 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Kayıt Geri Yükle{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h4><i class="bi bi-arrow-clockwise"></i> Kayıt Geri Yükle</h4>
+            </div>
+            <div class="card-body">
+                <p>Bu kaydı geri yüklemek istediğinize emin misiniz?</p>
+                <p><strong>{{ object }}</strong></p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Kayıt tekrar aktif hale gelecektir.
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'silinen_kayitlar' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-arrow-clockwise"></i> Geri Yükle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
