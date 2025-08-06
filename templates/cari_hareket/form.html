@@ -1,0 +1,1134 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tutar-input-group {
+        position: relative;
+    }
+
+    .tutar-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+
+    .bakiye-table {
+        margin-top: 20px;
+    }
+
+    .bakiye-positive {
+        background-color: #d4edda !important;
+        color: #155724;
+    }
+
+    .bakiye-negative {
+        background-color: #f8d7da !important;
+        color: #721c24;
+    }
+
+    .bakiye-zero {
+        background-color: #f8f9fa !important;
+    }
+
+    #cariBakiyeSection {
+        margin-top: 30px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .bakiye-table th {
+        background-color: #e9ecef;
+    }
+
+    .success-message {
+        animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Print stili ekle */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #islemOzetiModal .modal-content,
+    #islemOzetiModal .modal-content * {
+        visibility: visible;
+    }
+    #islemOzetiModal .modal-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .modal-footer {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Başarı mesajı için alan -->
+            <div id="formMessages"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Lütfen aşağıdaki hataları düzeltin:</strong>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" id="cariHareketForm">
+                        {% csrf_token %}
+                        {% if object %}
+                        <input type="hidden" name="hareket_id" value="{{ object.id }}">
+                        {% endif %}
+
+                        <!-- Tarih ve Cari -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tarih ve Saat <span class="text-danger">*</span></label>
+                                {{ form.tarih }}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">
+                                    Cari Seçin <span class="text-danger">*</span>
+                                    <small class="text-muted">(F5 tuşuna basarak arama yapabilirsiniz)</small>
+                                </label>
+                                {{ form.cari }}
+                            </div>
+                        </div>
+
+                        <!-- Para Birimi ve Tutar -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Para Birimi <span class="text-danger">*</span></label>
+                                {{ form.para_birimi }}
+                            </div>
+                            <div class="col-md-9">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="tutar-input-group">
+                                            <label class="form-label tutar-label" id="girisLabel">Giriş
+                                                (Tahsilat)</label>
+                                            {{ form.giris }}
+                                            <small class="form-text text-muted">Cariden tahsilat</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="tutar-input-group">
+                                            <label class="form-label tutar-label" id="cikisLabel">Çıkış (Ödeme)</label>
+                                            {{ form.cikis }}
+                                            <small class="form-text text-muted">Cariye ödeme</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Döviz İşlemleri -->
+                                <div id="dovizIslemleriToggle" style="display: none;" class="mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="dovizBtn">
+                                        <i class="bi bi-currency-exchange"></i> Döviz İşlemleri
+                                    </button>
+                                </div>
+
+                                <div id="dovizIslemleriPanel" style="display: none;" class="mt-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row mb-3">
+                                                <div class="col-md-12">
+                                                    <label class="form-label">Döviz Kuru</label>
+                                                    <input type="number" id="dovizKuru" class="form-control"
+                                                        step="0.0001"
+                                                        placeholder="1 {{ form.para_birimi.value }} = ? TL">
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="tutar-input-group">
+                                                        <label class="form-label tutar-label">TL Giriş
+                                                            (Tahsilat)</label>
+                                                        <input type="number" id="tlGiris" class="form-control"
+                                                            step="0.01" placeholder="0.00">
+                                                        <small class="form-text text-muted">TL cinsinden
+                                                            tahsilat</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="tutar-input-group">
+                                                        <label class="form-label tutar-label">TL Çıkış (Ödeme)</label>
+                                                        <input type="number" id="tlCikis" class="form-control"
+                                                            step="0.01" placeholder="0.00">
+                                                        <small class="form-text text-muted">TL cinsinden ödeme</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- İşlem Tipi -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">İşlem Tipi <span class="text-danger">*</span></label>
+                                {{ form.islem_tipi }}
+                            </div>
+                            <div class="col-md-8">
+                                <!-- Dinamik Hesap Seçimi -->
+                                <div id="hesapSecimDiv" style="display: none;">
+                                    <label class="form-label" id="hesapLabel">Hesap Seçin</label>
+                                    <select class="form-select" id="hesapSelect" disabled>
+                                        <option value="">Önce işlem tipi seçin</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gizli alanlar -->
+                        <div style="display: none;">
+                            {{ form.kasa }}
+                            {{ form.banka }}
+                            {{ form.pos }}
+                            <input type="hidden" id="doviz_kuru" name="doviz_kuru" value="">
+                            <input type="hidden" id="tl_tutar" name="tl_tutar" value="">
+                        </div>
+
+                        <!-- Açıklama -->
+                        <div class="mb-3">
+                            <label class="form-label">Açıklama</label>
+                            {{ form.aciklama }}
+                        </div>
+
+                        <!-- Butonlar -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'cari_hareket_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Geri
+                            </a>
+                            <div>
+                                {% if object %}
+                                <button type="button" class="btn btn-info me-2" id="dekontBtn">
+                                    <i class="bi bi-receipt"></i> Dekont
+                                </button>
+                                <button type="button" class="btn btn-danger me-2" id="deleteBtn">
+                                    <i class="bi bi-trash"></i> Sil
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="bi bi-save"></i> Güncelle
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="bi bi-save"></i> Kaydet
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cari Bakiye Detayları -->
+            <div id="cariBakiyeSection">
+                <h5 class="mb-3">
+
+                    <span id="cariUnvan">Cari Bakiye Detayları</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered bakiye-table">
+                        <thead>
+                            <tr>
+                                <th>Para Birimi</th>
+                                <th class="text-end">Toplam Giriş</th>
+                                <th class="text-end">Toplam Çıkış</th>
+                                <th class="text-end">Bakiye</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bakiyeTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Cari seçimi yapınız</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İşlem Özeti Modal -->
+<div class="modal fade" id="islemOzetiModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> İşlem Başarıyla Tamamlandı</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="islemOzetiContent">
+                    <!-- İçerik buraya gelecek -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" onclick="takeScreenshot()">
+                    <i class="bi bi-camera"></i> Ekran Görüntüsü Al
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Döviz kurlarını tanımla
+        var dovizKurlari = {};
+        {% if doviz_kurlari.USD %}
+        dovizKurlari['USD'] = parseFloat("{{ doviz_kurlari.USD }}".replace(",", "."));
+        {% else %}
+        dovizKurlari['USD'] = 0;
+        {% endif %}
+
+        {% if doviz_kurlari.EUR %}
+        dovizKurlari['EUR'] = parseFloat("{{ doviz_kurlari.EUR }}".replace(",", "."));
+        {% else %}
+        dovizKurlari['EUR'] = 0;
+        {% endif %}
+
+
+
+
+        // Cari değiştiğinde bakiye detaylarını güncelle
+        function updateCariBakiye() {
+            var cariId = $('#id_cari').val();
+
+            if (cariId) {
+                // Seçili cari bilgisini al
+                var selectedText = $('#id_cari option:selected').text();
+                var cariInfo = selectedText.split(' - ');
+                var cariKod = cariInfo[0];
+                var cariUnvan = cariInfo[1] || '';
+
+                // Başlığı güncelle
+                $('#cariUnvan').html(cariKod + ' - ' + cariUnvan + ' - Bakiye Detayları');
+
+
+                // AJAX ile bakiye detaylarını getir
+                $.ajax({
+                    url: '{% url "cari_bakiye_detay" %}',
+                    data: { cari_id: cariId },
+                    success: function (data) {
+                        if (data.success) {
+                            var tbody = $('#bakiyeTableBody');
+                            tbody.empty();
+
+                            // Her para birimi için satır oluştur
+                            $.each(data.bakiyeler, function (index, item) {
+                                var bakiye = parseFloat(item.bakiye);
+                                var bakiyeClass = '';
+
+                                if (bakiye > 0) {
+                                    bakiyeClass = 'bakiye-positive';
+                                } else if (bakiye < 0) {
+                                    bakiyeClass = 'bakiye-negative';
+                                } else {
+                                    bakiyeClass = 'bakiye-zero';
+                                }
+
+                                var row = $('<tr>');
+                                row.append('<td><strong>' + item.para_birimi + '</strong></td>');
+                                row.append('<td class="text-end">' + formatNumber(item.toplam_giris) + '</td>');
+                                row.append('<td class="text-end">' + formatNumber(item.toplam_cikis) + '</td>');
+                                row.append('<td class="text-end"><strong class="' + bakiyeClass + '">' + formatNumber(bakiye) + '</strong></td>');
+
+                                tbody.append(row);
+                            });
+
+                            // Eğer hiç bakiye yoksa bilgi göster
+                            if (data.bakiyeler.length === 0) {
+                                tbody.append('<tr><td colspan="4" class="text-center text-muted">Bu carinin henüz hareketi bulunmamaktadır.</td></tr>');
+                            }
+                        }
+                    },
+                    error: function () {
+                        console.error('Bakiye detayları alınamadı');
+                        // Hata durumunda basit bir çözüm
+                        fallbackBakiyeGoster(cariId);
+                    }
+                });
+            } else {
+                // Cari seçilmemişse boş tablo göster
+                $('#cariUnvan').html('Cari Bakiye Detayları');
+                $('#bakiyeTableBody').html('<tr><td colspan="4" class="text-center text-muted">Cari seçimi yapınız</td></tr>');
+            }
+        }
+
+        // Sayı formatlama fonksiyonu
+        function formatNumber(num) {
+            return parseFloat(num).toLocaleString('tr-TR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Fallback: Eğer özel endpoint yoksa
+        function fallbackBakiyeGoster(cariId) {
+            // En azından TL bakiyesini göster
+            $.ajax({
+                url: '{% url "cari_ara" %}',
+                data: { q: $('#id_cari option:selected').text().split(' - ')[0] },
+                success: function (data) {
+                    if (data.results.length > 0) {
+                        var cari = data.results[0];
+                        var tbody = $('#bakiyeTableBody');
+                        tbody.empty();
+
+                        var bakiye = parseFloat(cari.bakiye);
+                        var bakiyeClass = bakiye > 0 ? 'bakiye-positive' : (bakiye < 0 ? 'bakiye-negative' : 'bakiye-zero');
+
+                        var row = $('<tr>');
+                        row.append('<td><strong>TL - Türk Lirası</strong></td>');
+                        row.append('<td class="text-end">-</td>');
+                        row.append('<td class="text-end">-</td>');
+                        row.append('<td class="text-end ' + bakiyeClass + '"><strong>' + formatNumber(bakiye) + '</strong></td>');
+
+                        tbody.append(row);
+                    }
+                }
+            });
+        }
+
+
+
+
+        // Dekont butonu işlemi
+        $('#dekontBtn').click(function () {
+            // Form verilerinin güncel olduğundan emin olmak için
+            var giris = parseFloat($('#id_giris').val()) || 0;
+            var cikis = parseFloat($('#id_cikis').val()) || 0;
+    
+            if (giris <= 0 && cikis <= 0) {
+                alert('Bu işlem için tutar bilgisi bulunamadı!');
+                return;
+            }
+    
+            // Mevcut verileri kullanarak dekont modalını göster
+            showIslemOzeti();
+        });
+
+        // Silme butonu işlemi
+        $('#deleteBtn').click(function () {
+            if (confirm('Bu hareketi silmek istediğinize emin misiniz?')) {
+                var hareketId = $('input[name="hareket_id"]').val();
+
+                if (hareketId) {
+                    $.ajax({
+                        url: '/cari-hareket/sil/' + hareketId + '/',
+                        type: 'POST',
+                        data: {
+                            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                        },
+                        success: function (response) {
+                            alert('Hareket başarıyla silindi!');
+                            window.location.href = '{% url "cari_hareket_list" %}';
+                        },
+                        error: function (xhr) {
+                            alert('Silme işlemi sırasında bir hata oluştu!');
+                        }
+                    });
+                }
+            }
+        });
+
+        // Tutar alanlarına minimum değer ekle
+        $('#id_giris, #id_cikis').attr('min', '0.01');
+        $('#tlGiris, #tlCikis').attr('min', '0.01');
+
+        // Cari değiştiğinde
+        $('#id_cari').on('change', function () {
+            console.log('Change event tetiklendi, cari ID:', $(this).val());
+            setTimeout(updateCariBakiye, 100);
+        });
+
+        // Select2 eventleri - F5 için
+        $('#id_cari').on('select2:select select2:selecting change.select2', function (e) {
+            console.log('Select2 event tetiklendi:', e.type);
+            setTimeout(updateCariBakiye, 200);
+        });
+
+        // MutationObserver ile DOM değişikliklerini izle
+        var cariSelect = document.getElementById('id_cari');
+        if (cariSelect) {
+            var observer = new MutationObserver(function (mutations) {
+                var valueChanged = false;
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                        valueChanged = true;
+                    } else if (mutation.type === 'childList') {
+                        // Yeni option eklendi mi kontrol et
+                        mutation.addedNodes.forEach(function (node) {
+                            if (node.nodeName === 'OPTION' && node.selected) {
+                                valueChanged = true;
+                            }
+                        });
+                    }
+                });
+
+                if (valueChanged && $('#id_cari').val()) {
+                    console.log('MutationObserver: Cari değişti');
+                    setTimeout(updateCariBakiye, 300);
+                }
+            });
+
+            observer.observe(cariSelect, {
+                attributes: true,
+                attributeFilter: ['value'],
+                childList: true,
+                subtree: true
+            });
+        }
+
+        // Global olarak updateCariBakiye'yi tanımla (F5 kodu erişebilsin diye)
+        window.updateCariBakiye = updateCariBakiye;
+
+        // Periyodik kontrol - F5 seçimi için ek güvenlik
+        var lastCariId = $('#id_cari').val();
+        setInterval(function () {
+            var currentCariId = $('#id_cari').val();
+            if (currentCariId && currentCariId !== lastCariId) {
+                lastCariId = currentCariId;
+                console.log('Periyodik kontrol: Cari değişti');
+                updateCariBakiye();
+            }
+        }, 500);
+
+        // Sayfa yüklendiğinde cari seçiliyse
+        if ($('#id_cari').val()) {
+            updateCariBakiye();
+        }
+
+        // İlk yüklemede updateHesapSecim'i biraz geciktirerek çalıştır - BURAYA EKLE
+        setTimeout(function () {
+            if ($('#id_islem_tipi').val() === 'nakit') {
+                updateHesapSecim();
+            }
+        }, 300);
+
+        // DÜZENLEME MODUNDA DÖVİZ İŞLEMLERİNİ KONTROL ET
+        {% if object and object.doviz_kuru %}
+        // Eğer düzenleme modundaysak ve döviz kuru varsa
+        var mevcutDovizKuru = "{{ doviz_kuru_str|default:'' }}";
+        var mevcutTlKarsiligi = "{{ object.tl_karsiligi|default:'' }}";
+
+        if (mevcutDovizKuru && parseFloat(mevcutDovizKuru) > 0) {
+            // Döviz işlemleri panelini göster
+            $('#dovizIslemleriToggle').show();
+            $('#dovizIslemleriPanel').show();
+            $('#dovizBtn').removeClass('btn-outline-primary').addClass('btn-primary');
+
+            console.log('Mevcut Döviz Kuru:', mevcutDovizKuru);
+            // Kur bilgisini doldur
+            var kurDegeri = parseFloat(mevcutDovizKuru);
+            if (!isNaN(kurDegeri)) {
+                $('#dovizKuru').val(kurDegeri.toFixed(4));
+            }
+
+            // TL karşılığını ilgili alana yerleştir
+            if (mevcutTlKarsiligi) {
+                if ('{{ object.hareket_yonu }}' === 'giris') {
+                    $('#tlGiris').val(parseFloat(mevcutTlKarsiligi).toFixed(2));
+                } else if ('{{ object.hareket_yonu }}' === 'cikis') {
+                    $('#tlCikis').val(parseFloat(mevcutTlKarsiligi).toFixed(2));
+                }
+            }
+
+            // Hesap seçimini güncelle (TL kasası/bankası gösterilsin)
+            setTimeout(function () {
+                updateHesapSecim();
+            }, 500);
+        }
+        {% endif %}
+
+        // Para birimi değiştiğinde label'ları güncelle
+        $('#id_para_birimi').change(function () {
+            var selectedOption = $(this).find('option:selected');
+            var paraBirimiKod = selectedOption.text().split(' - ')[0] || 'TL';
+            var paraBirimiId = $(this).val();
+
+            // Label'ları güncelle
+            $('#girisLabel').text('Giriş (' + paraBirimiKod + ')');
+            $('#cikisLabel').text('Çıkış (' + paraBirimiKod + ')');
+
+            // TL değilse döviz işlemleri butonunu göster
+            if (paraBirimiKod !== 'TL' && paraBirimiId) {
+                $('#dovizIslemleriToggle').show();
+                $('#dovizKuru').attr('placeholder', '1 ' + paraBirimiKod + ' = ? TL');
+
+                 // Otomatik kur doldur
+                if (dovizKurlari[paraBirimiKod] > 0) {
+                    $('#dovizKuru').val(dovizKurlari[paraBirimiKod]);
+                }
+
+                // Panel açıksa ve tutar varsa otomatik hesapla - SADECE YENİ KAYITTA
+                {% if not object %}
+                setTimeout(function() {
+                    if ($('#dovizIslemleriPanel').is(':visible') && $('#dovizKuru').val()) {
+                        if ($('#id_giris').val() && parseFloat($('#id_giris').val()) > 0) {
+                            $('#id_giris').trigger('input');
+                        } else if ($('#id_cikis').val() && parseFloat($('#id_cikis').val()) > 0) {
+                            $('#id_cikis').trigger('input');
+                        }
+                    }
+                }, 100);
+                {% endif %}
+
+                // DÜZENLEME MODUNDA VE DÖVİZ KURU VARSA PANELİ AÇIK TUT
+                {% if object and object.doviz_kuru %}
+                if (parseFloat("{{ object.doviz_kuru|default:'0' }}") > 0) {
+                    // Panel zaten açık, sadece placeholder'ı güncelle
+                    $('#dovizKuru').attr('placeholder', '1 ' + paraBirimiKod + ' = ? TL');
+                }
+                {% endif %}
+            } else {
+                $('#dovizIslemleriToggle').hide();
+                $('#dovizIslemleriPanel').hide();
+            }
+            // Hesap seçimini güncelle
+            updateHesapSecim();
+        });
+
+        // Döviz işlemleri butonu
+        $('#dovizBtn').click(function () {
+            $('#dovizIslemleriPanel').slideToggle(function () {
+                // Panel açıldıysa
+                if ($('#dovizIslemleriPanel').is(':visible')) {
+                    // Kur yoksa doldur
+                    var paraBirimiKod = $('#id_para_birimi option:selected').text().split(' - ')[0];
+                    if (!$('#dovizKuru').val() && dovizKurlari[paraBirimiKod] > 0) {
+                        $('#dovizKuru').val(dovizKurlari[paraBirimiKod]);
+                    }
+            
+                    // Kur varsa ve tutar alanları doluysa hesapla
+                    {% if not object %}
+                    setTimeout(function() {
+                        if ($('#dovizKuru').val() && parseFloat($('#dovizKuru').val()) > 0) {
+                            if ($('#id_giris').val() && parseFloat($('#id_giris').val()) > 0) {
+                                $('#id_giris').trigger('input');
+                            } else if ($('#id_cikis').val() && parseFloat($('#id_cikis').val()) > 0) {
+                                $('#id_cikis').trigger('input');
+                            }
+                        }
+                    }, 100);
+                    {% endif %}
+                }
+        // Panel açıldı/kapandıktan sonra hesap seçimini güncelle
+        updateHesapSecim();
+    });
+    $(this).toggleClass('btn-outline-primary btn-primary');
+});
+
+        // Döviz hesaplamaları
+        var dovizHesaplamaAktif = false;
+
+        // Döviz tutarı girildiğinde TL hesapla
+        $('#id_giris').on('input', function () {
+            if (!dovizHesaplamaAktif && $('#dovizIslemleriPanel').is(':visible')) {
+                dovizHesaplamaAktif = true;
+                var dovizTutar = parseFloat($(this).val()) || 0;
+                var kur = parseFloat($('#dovizKuru').val()) || 0;
+                if (dovizTutar > 0 && kur > 0) {
+                    $('#tlGiris').val((dovizTutar * kur).toFixed(2));
+                    $('#tlCikis').val('');
+                    $('#id_cikis').val('');
+                }
+                dovizHesaplamaAktif = false;
+            }
+        });
+
+        $('#id_cikis').on('input', function () {
+            if (!dovizHesaplamaAktif && $('#dovizIslemleriPanel').is(':visible')) {
+                dovizHesaplamaAktif = true;
+                var dovizTutar = parseFloat($(this).val()) || 0;
+                var kur = parseFloat($('#dovizKuru').val()) || 0;
+                if (dovizTutar > 0 && kur > 0) {
+                    $('#tlCikis').val((dovizTutar * kur).toFixed(2));
+                    $('#tlGiris').val('');
+                    $('#id_giris').val('');
+                }
+                dovizHesaplamaAktif = false;
+            }
+        });
+
+        // TL tutarı girildiğinde döviz hesapla
+        $('#tlGiris').on('input', function () {
+            if (!dovizHesaplamaAktif) {
+                dovizHesaplamaAktif = true;
+                var tlTutar = parseFloat($(this).val()) || 0;
+                var kur = parseFloat($('#dovizKuru').val()) || 0;
+                if (tlTutar > 0 && kur > 0) {
+                    $('#id_giris').val((tlTutar / kur).toFixed(2));
+                    $('#id_cikis').val('');
+                    $('#tlCikis').val('');
+                }
+                dovizHesaplamaAktif = false;
+            }
+        });
+
+        $('#tlCikis').on('input', function () {
+            if (!dovizHesaplamaAktif) {
+                dovizHesaplamaAktif = true;
+                var tlTutar = parseFloat($(this).val()) || 0;
+                var kur = parseFloat($('#dovizKuru').val()) || 0;
+                if (tlTutar > 0 && kur > 0) {
+                    $('#id_cikis').val((tlTutar / kur).toFixed(2));
+                    $('#id_giris').val('');
+                    $('#tlGiris').val('');
+                }
+                dovizHesaplamaAktif = false;
+            }
+        });
+
+        // Kur değiştiğinde yeniden hesapla
+        $('#dovizKuru').on('input', function () {
+            var kur = parseFloat($(this).val()) || 0;
+            if (kur > 0) {
+                // Hangi alan doluysa ona göre hesapla
+                if ($('#id_giris').val()) {
+                    $('#id_giris').trigger('input');
+                } else if ($('#id_cikis').val()) {
+                    $('#id_cikis').trigger('input');
+                } else if ($('#tlGiris').val()) {
+                    $('#tlGiris').trigger('input');
+                } else if ($('#tlCikis').val()) {
+                    $('#tlCikis').trigger('input');
+                }
+            }
+        });
+
+        // Giriş/Çıkış tutar kontrolü - güncelle
+        $('#id_giris, #tlGiris').on('input', function () {
+            if ($(this).val()) {
+                // Çıkış alanlarını temizle (disabled yapmak yerine)
+                $('#id_cikis, #tlCikis').val('');
+            }
+        });
+
+        $('#id_cikis, #tlCikis').on('input', function () {
+            if ($(this).val()) {
+                // Giriş alanlarını temizle (disabled yapmak yerine)
+                $('#id_giris, #tlGiris').val('');
+            }
+        });
+
+        // İşlem tipi ve para birimi değiştiğinde
+        $('#id_islem_tipi, #id_para_birimi').change(function () {
+            updateHesapSecim();
+        });
+
+        function updateHesapSecim() {
+            var islemTipi = $('#id_islem_tipi').val();
+            var paraBirimiId = $('#id_para_birimi').val();
+
+            // Döviz işlemleri açıksa ve TL kasası gösterilmesi gerekiyorsa
+            var dovizIslemleriAcik = $('#dovizIslemleriPanel').is(':visible');
+            var kullanilacakParaBirimi = paraBirimiId;
+
+            if (dovizIslemleriAcik) {
+                // TL para biriminin ID'sini bul
+                $('#id_para_birimi option').each(function () {
+                    if ($(this).text().indexOf('TL -') === 0) {
+                        kullanilacakParaBirimi = $(this).val();
+                        return false;
+                    }
+                });
+            }
+
+            // Tüm gizli alanları temizle
+            $('#id_kasa, #id_banka, #id_pos').val('');
+
+            if (islemTipi && islemTipi !== 'diger') {
+                $('#hesapSecimDiv').show();
+                $('#hesapSelect').prop('disabled', false).empty();
+
+                // Label güncelle
+                var label = '';
+                if (islemTipi === 'nakit') {
+                    label = 'Kasa Seçin';
+                } else if (islemTipi === 'banka') {
+                    label = 'Banka Hesabı Seçin';
+                } else if (islemTipi === 'pos') {
+                    label = 'POS Cihazı Seçin';
+                }
+                $('#hesapLabel').text(label);
+
+                // AJAX ile hesapları getir
+                if (kullanilacakParaBirimi) {
+                    $.ajax({
+                        url: '{% url "kasa_banka_getir" %}',
+                        data: {
+                            'para_birimi_id': kullanilacakParaBirimi,
+                            'islem_tipi': islemTipi
+                        },
+                        success: function (data) {
+                            // Select'i temizle ve ilk option'ı ekle
+                            $('#hesapSelect').empty().append('<option value="">Seçin...</option>');
+
+                            var firstItemId = null;
+                            var seenIds = new Set(); // Tekrar kontrolü için Set kullan
+
+                            $.each(data.items, function (index, item) {
+                                // Tekrar kontrolü - daha güvenilir
+                                if (!seenIds.has(item.id)) {
+                                    seenIds.add(item.id);
+
+                                    if (firstItemId === null) {
+                                        firstItemId = item.id;
+                                    }
+
+                                    var option = $('<option></option>')
+                                        .attr('value', item.id)
+                                        .text(item.text);
+
+                                    $('#hesapSelect').append(option);
+                                }
+                            });
+
+                            if (data.items.length === 0) {
+                                $('#hesapSelect').append('<option value="">Uygun hesap bulunamadı</option>');
+                            } else if (firstItemId) {
+                                // İlk item'ı otomatik seç
+                                $('#hesapSelect').val(firstItemId).trigger('change');
+                            }
+                        },
+                        error: function () {
+                            $('#hesapSelect').html('<option value="">Hata: Hesaplar yüklenemedi</option>');
+                        }
+                    });
+                } else {
+                    $('#hesapSelect').html('<option value="">Önce para birimi seçin</option>');
+                }
+            } else {
+                $('#hesapSecimDiv').hide();
+                $('#hesapSelect').prop('disabled', true);
+            }
+        }
+
+        // Hesap seçildiğinde ilgili form alanını güncelle
+        $('#hesapSelect').change(function () {
+            var selectedId = $(this).val();
+            var islemTipi = $('#id_islem_tipi').val();
+
+            // Tüm gizli alanları temizle
+            $('#id_kasa, #id_banka, #id_pos').val('');
+
+            // İlgili alanı doldur
+            if (selectedId) {
+                if (islemTipi === 'nakit') {
+                    $('#id_kasa').val(selectedId);
+                } else if (islemTipi === 'banka') {
+                    $('#id_banka').val(selectedId);
+                } else if (islemTipi === 'pos') {
+                    $('#id_pos').val(selectedId);
+                }
+            }
+        });
+
+        // Form gönderilmeden önce kontrol
+        $('#cariHareketForm').submit(function (e) {
+            e.preventDefault(); // Varsayılan submit davranışını durdur
+
+            // Tutar kontrolü ekle
+            var giris = parseFloat($('#id_giris').val()) || 0;
+            var cikis = parseFloat($('#id_cikis').val()) || 0;
+
+            if (giris <= 0 && cikis <= 0) {
+                alert('Tutar girmediniz!');
+                return false;
+            }
+
+            if (giris > 0 && cikis > 0) {
+                alert('Hem giriş hem çıkış tutarı aynı anda girilemez!');
+                return false;
+            }
+
+            // DÖVİZ KURU ZORUNLULUK KONTROLÜ
+            if ($('#dovizIslemleriPanel').is(':visible')) {
+                var dovizKuru = parseFloat($('#dovizKuru').val()) || 0;
+                if (dovizKuru <= 0) {
+                    alert('Döviz işlemleri için kur bilgisi zorunludur!');
+                    $('#dovizKuru').focus();
+                    return false;
+                }
+            }
+
+            var islemTipi = $('#id_islem_tipi').val();
+            var hesapSecim = $('#hesapSelect').val();
+
+            if (islemTipi !== 'diger' && !hesapSecim) {
+                alert('Lütfen ' + $('#hesapLabel').text().toLowerCase() + '!');
+                return false;
+            }
+
+            // Döviz işlemleri açıksa değerleri set et
+            if ($('#dovizIslemleriPanel').is(':visible')) {
+
+
+                // Panel açıldığında kur yoksa doldur
+                if (!$('#dovizKuru').val()) {
+                    var paraBirimiKod = $('#id_para_birimi option:selected').text().split(' - ')[0];
+                    if (dovizKurlari[paraBirimiKod] > 0) {
+                        $('#dovizKuru').val(dovizKurlari[paraBirimiKod]);
+                    }
+                }
+                $('#doviz_kuru').val($('#dovizKuru').val());
+                var tlTutar = $('#tlGiris').val() || $('#tlCikis').val() || '0';
+                $('#tl_tutar').val(tlTutar);
+            }
+
+            // Form verilerini topla
+            var formData = $(this).serialize();
+            var submitBtn = $('#submitBtn');
+            var originalText = submitBtn.html();
+            var isUpdate = $('input[name="hareket_id"]').val() ? true : false;
+
+            // Butonu devre dışı bırak
+            submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> İşleniyor...');
+
+            // AJAX ile formu gönder
+            $.ajax({
+                url: $(this).attr('action') || window.location.href,
+                type: 'POST',
+                data: formData,
+                success: function (response) {
+                    // Başarı mesajı göster
+                    $('#formMessages').html(
+                        '<div class="alert alert-success alert-dismissible fade show success-message">' +
+                        '<i class="bi bi-check-circle"></i> İşlem başarıyla kaydedildi!' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                        '</div>'
+                    );
+
+                    // İşlem özeti modalını hazırla ve göster
+                    showIslemOzeti();
+
+                    // Eğer yeni kayıtsa, düzenleme moduna geç
+                    if (!isUpdate && response.hareket_id) {
+                        // URL'yi güncelle (sayfa yenilenmeden)
+                        window.history.pushState({}, '', '/cari-hareket/duzenle/' + response.hareket_id + '/');
+
+                        // Hidden input ekle
+                        if ($('input[name="hareket_id"]').length === 0) {
+                            $('#cariHareketForm').append('<input type="hidden" name="hareket_id" value="' + response.hareket_id + '">');
+                        } else {
+                            $('input[name="hareket_id"]').val(response.hareket_id);
+                        }
+
+                        // Buton metnini güncelle
+                        submitBtn.html('<i class="bi bi-save"></i> Güncelle');
+
+                        // Başlığı güncelle
+                        $('.card-header h4').text('Cari Hareket Düzenle');
+                    }
+
+                    // Bakiye tablosunu güncelle
+                    updateCariBakiye();
+
+                    // Sayfayı yukarı kaydır
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                    // Butonu eski haline getir - DÜZELTME BURADA
+                    setTimeout(function () {
+                        submitBtn.prop('disabled', false);
+                        if (isUpdate) {
+                            submitBtn.html('<i class="bi bi-save"></i> Güncelle');
+                        } else {
+                            submitBtn.html('<i class="bi bi-save"></i> Kaydet');
+                        }
+                    }, 100);
+                },
+                error: function (xhr) {
+                    var errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+
+                    // Django form hatalarını parse et
+                    try {
+                        if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            errorMessage = xhr.responseJSON.errors;
+                        } else if (xhr.responseText) {
+                            // HTML response'dan hata mesajlarını çıkarmaya çalış
+                            var tempDiv = $('<div>').html(xhr.responseText);
+                            var djangoErrors = tempDiv.find('.alert-danger').text();
+                            if (djangoErrors) {
+                                errorMessage = djangoErrors;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Hata parse edilemedi:', e);
+                    }
+
+                    $('#formMessages').html(
+                        '<div class="alert alert-danger alert-dismissible fade show">' +
+                        '<i class="bi bi-exclamation-triangle"></i> ' + errorMessage +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                        '</div>'
+                    );
+
+                    // Butonu eski haline getir
+                    submitBtn.prop('disabled', false).html(originalText);
+
+                    // Sayfayı yukarı kaydır
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Sayfa yüklendiğinde varsayılan ayarlar
+        updateHesapSecim();
+
+        // Eğer işlem tipi nakit ise (varsayılan) hemen çalıştır
+        if ($('#id_islem_tipi').val() === 'nakit') {
+            // Para birimi değişikliğini tetikle ki kasa listesi gelsin
+            $('#id_para_birimi').trigger('change');
+        }
+
+
+
+
+        
+
+        // DÜZENLEME MODUNDA PARA BİRİMİ DEĞİŞİKLİĞİNİ TETİKLE
+        {% if object %}
+        setTimeout(function () {
+            $('#id_para_birimi').trigger('change');
+        }, 100);
+        {% endif %}
+
+        // İşlem özeti fonksiyonlarını ekle
+        function showIslemOzeti() {
+            var cariText = $('#id_cari option:selected').text();
+            var cariInfo = cariText.split(' - ');
+            var cariKod = cariInfo[0];
+            var cariUnvan = cariInfo[1] || '';
+            var paraBirimi = $('#id_para_birimi option:selected').text().split(' - ')[0];
+            var giris = parseFloat($('#id_giris').val()) || 0;
+            var cikis = parseFloat($('#id_cikis').val()) || 0;
+            var tarih = $('#id_tarih').val();
+            
+            // Tarih formatla
+            var tarihObj = new Date(tarih);
+            var formatliTarih = tarihObj.toLocaleDateString('tr-TR') + ' ' + tarihObj.toLocaleTimeString('tr-TR');
+            
+            var islemTipi = $('#id_islem_tipi').val();
+            var hesapAdi = $('#hesapSelect option:selected').text() || '-';
+            
+            var ozetHTML = '<div class="table-responsive">';
+            ozetHTML += '<table class="table table-sm">';
+            ozetHTML += '<tr><td><strong>Tarih/Saat:</strong></td><td>' + formatliTarih + '</td></tr>';
+            ozetHTML += '<tr><td><strong>Cari:</strong></td><td>' + cariKod + ' - ' + cariUnvan + '</td></tr>';
+            
+            // İşlem açıklaması
+            if (giris > 0) {
+                ozetHTML += '<tr><td><strong>İşlem:</strong></td><td class="text-success"><i class="bi bi-arrow-down-circle"></i> ' + 
+                            cariUnvan + ' firmasından <strong>' + formatNumber(giris) + ' ' + paraBirimi + '</strong> tahsilat alındı. <br> Ödeme için teşekkür ederiz.</td></tr>';
+            } else {
+                ozetHTML += '<tr><td><strong>İşlem:</strong></td><td class="text-danger"><i class="bi bi-arrow-up-circle"></i> ' + 
+                            cariUnvan + ' firmasına <strong>' + formatNumber(cikis) + ' ' + paraBirimi + '</strong> ödeme yapıldı</td></tr>';
+            }
+            
+            ozetHTML += '<tr><td><strong>İşlem Tipi:</strong></td><td>' + $('#id_islem_tipi option:selected').text() + '</td></tr>';
+            
+            if (islemTipi !== 'diger') {
+                ozetHTML += '<tr><td><strong>Hesap:</strong></td><td>' + hesapAdi + '</td></tr>';
+            }
+            
+            // Döviz bilgisi varsa
+            if ($('#dovizIslemleriPanel').is(':visible') && $('#dovizKuru').val()) {
+                var kur = parseFloat($('#dovizKuru').val());
+                var tlTutar = $('#tlGiris').val() || $('#tlCikis').val();
+                ozetHTML += '<tr><td><strong>Döviz Kuru:</strong></td><td>1 ' + paraBirimi + ' = ' + formatNumber(kur) + ' TL</td></tr>';
+                ozetHTML += '<tr><td><strong>TL Karşılığı:</strong></td><td>' + formatNumber(parseFloat(tlTutar)) + ' TL</td></tr>';
+            }
+            
+            ozetHTML += '</table>';
+            
+            // Güncel bakiye bilgisi
+            ozetHTML += '<hr>';
+            ozetHTML += '<h6 class="mb-3">İşlem Sonrası Güncel Cari Bakiye</h6>';
+            ozetHTML += '<div id="modalBakiyeTable"></div>';
+            ozetHTML += '</div>';
+            
+            $('#islemOzetiContent').html(ozetHTML);
+            
+            // Bakiye bilgisini getir
+            updateModalBakiye();
+            
+            // Modalı göster
+            $('#islemOzetiModal').modal('show');
+        }
+
+        function updateModalBakiye() {
+            var cariId = $('#id_cari').val();
+            
+            $.ajax({
+                url: '{% url "cari_bakiye_detay" %}',
+                data: { cari_id: cariId },
+                success: function(data) {
+                    if (data.success) {
+                        var tableHTML = '<table class="table table-sm table-bordered">';
+                        tableHTML += '<thead><tr><th>Para Birimi</th><th class="text-end">Bakiye</th></tr></thead>';
+                        tableHTML += '<tbody>';
+                        
+                        $.each(data.bakiyeler, function(index, item) {
+                            var bakiye = parseFloat(item.bakiye);
+                            var bakiyeClass = bakiye > 0 ? 'text-success' : (bakiye < 0 ? 'text-danger' : '');
+                            
+                            tableHTML += '<tr>';
+                            tableHTML += '<td>' + item.para_birimi + '</td>';
+                            tableHTML += '<td class="text-end ' + bakiyeClass + '"><strong>' + formatNumber(bakiye) + '</strong></td>';
+                            tableHTML += '</tr>';
+                        });
+                        
+                        tableHTML += '</tbody></table>';
+                        $('#modalBakiyeTable').html(tableHTML);
+                    }
+                }
+            });
+        }
+
+        // Ekran görüntüsü alma fonksiyonu
+        window.takeScreenshot = function() {
+            // Basit çözüm olarak print dialog aç
+            window.print();
+        }
+
+    }); // document.ready kapanışı
+</script>
+{% endblock %}

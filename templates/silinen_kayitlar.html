@@ -1,0 +1,525 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Silinen Kayıtlar{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">
+    <i class="bi bi-trash3"></i> Silinen Kayıtlar
+</h1>
+
+{% if not user.is_superuser %}
+<div class="alert alert-danger">
+    Bu sayfaya erişim yetkiniz bulunmamaktadır!
+</div>
+{% else %}
+
+<!-- Tab Menü -->
+<ul class="nav nav-tabs" id="silinenTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="cari-tab" data-bs-toggle="tab" data-bs-target="#cari" type="button">
+            <i class="bi bi-people"></i> Cariler ({{ silinen_cariler.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="grup-tab" data-bs-toggle="tab" data-bs-target="#grup" type="button">
+            <i class="bi bi-folder"></i> Cari Grupları ({{ silinen_gruplar.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stok-tab" data-bs-toggle="tab" data-bs-target="#stok" type="button">
+            <i class="bi bi-box"></i> Stoklar ({{ silinen_stoklar.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="carihareket-tab" data-bs-toggle="tab" data-bs-target="#carihareket" type="button">
+            <i class="bi bi-box"></i> Cari Hareketler ({{ silinen_carihareketler.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="fatura-tab" data-bs-toggle="tab" data-bs-target="#fatura" type="button">
+            <i class="bi bi-receipt"></i> Faturalar ({{ silinen_faturalar.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="genel-secenek-tab" data-bs-toggle="tab" data-bs-target="#genel-secenek"
+            type="button">
+            <i class="bi bi-list-check"></i> Genel Seçenekler ({{ silinen_genel_secenekler.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="genel-secenek-deger-tab" data-bs-toggle="tab" data-bs-target="#genel-secenek-deger"
+            type="button">
+            <i class="bi bi-check2-square"></i> Genel Seçenek Değerleri ({{ silinen_genel_secenek_degerler.count }})
+        </button>
+    </li>
+</ul>
+
+<!-- Tab İçerikleri -->
+<div class="tab-content" id="silinenTabContent">
+    <!-- Silinen Cariler -->
+    <div class="tab-pane fade show active" id="cari" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Cari Kayıtları</h5>
+                {% if silinen_cariler.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('cari')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kod</th>
+                            <th>Ünvan</th>
+                            <th>Oluşturma</th>
+                            <th>Silinme</th>
+                            <th>Silen</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cari in silinen_cariler %}
+                        <tr>
+                            <td>{{ cari.kod }}</td>
+                            <td>{{ cari.unvan }}</td>
+                            <td>{{ cari.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ cari.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ cari.silen_kullanici.username }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'cari' cari.pk %}" class="btn btn-sm btn-success"
+                                    title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'cari' cari.pk %}" class="btn btn-sm btn-danger"
+                                    title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">Silinen cari kaydı bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Silinen Gruplar -->
+    <div class="tab-pane fade" id="grup" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Cari Grupları</h5>
+                {% if silinen_gruplar.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('grup')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kod</th>
+                            <th>Grup Adı</th>
+                            <th>Oluşturma</th>
+                            <th>Silinme</th>
+                            <th>Silen</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grup in silinen_gruplar %}
+                        <tr>
+                            <td>{{ grup.kod }}</td>
+                            <td>{{ grup.ad }}</td>
+                            <td>{{ grup.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ grup.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ grup.silen_kullanici.username }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'grup' grup.pk %}" class="btn btn-sm btn-success"
+                                    title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'grup' grup.pk %}" class="btn btn-sm btn-danger"
+                                    title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">Silinen grup kaydı bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Silinen Stoklar -->
+    <div class="tab-pane fade" id="stok" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Stok Kayıtları</h5>
+                {% if silinen_stoklar.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('stok')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kod</th>
+                            <th>Stok Adı</th>
+                            <th>Oluşturma</th>
+                            <th>Silinme</th>
+                            <th>Silen</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stok in silinen_stoklar %}
+                        <tr>
+                            <td>{{ stok.kod }}</td>
+                            <td>{{ stok.ad }}</td>
+                            <td>{{ stok.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ stok.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ stok.silen_kullanici.username }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'stok' stok.pk %}" class="btn btn-sm btn-success"
+                                    title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'stok' stok.pk %}" class="btn btn-sm btn-danger"
+                                    title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">Silinen stok kaydı bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Silinen Cari Hareketler -->
+    <div class="tab-pane fade" id="carihareket" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Cari Hareket Kayıtları</h5>
+                {% if silinen_carihareketler.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('carihareket')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Cari Adı</th>
+                            <th>İşlem Tipi</th>
+                            <th>Tutar</th>
+                            <th>Hareket</th>
+                            <th>Oluşturma</th>
+                            <th>Oluşturan</th>
+                            <th>Silinme</th>
+                            <th>Silen</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carihareketler in silinen_carihareketler %}
+                        <tr>
+                            <td>{{ carihareketler.cari.unvan }}</td>
+                            <td>{{ carihareketler.islem_tipi }}</td>
+                            <td>{{ carihareketler.tutar }}</td>
+                            <td>{{ carihareketler.hareket_yonu }}</td>
+                            <td>{{ carihareketler.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ carihareketler.olusturan.username }}</td>
+                            <td>{{ carihareketler.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ carihareketler.silen_kullanici.username }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'carihareketler' carihareketler.pk %}"
+                                    class="btn btn-sm btn-success" title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'carihareketler' carihareketler.pk %}"
+                                    class="btn btn-sm btn-danger" title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">Silinen cari hareket kaydı bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Silinen Faturalar Tab -->
+    <div class="tab-pane fade" id="fatura" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Fatura Kayıtları</h5>
+                {% if silinen_faturalar.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('fatura')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fatura No</th>
+                            <th>Tarih</th>
+                            <th>Tip</th>
+                            <th>Cari</th>
+                            <th>Toplam</th>
+                            <th>Silinme Tarihi</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fatura in silinen_faturalar %}
+                        <tr>
+                            <td>{{ fatura.fatura_no }}</td>
+                            <td>{{ fatura.tarih|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if fatura.tip == 'satis' %}
+                                <span class="badge bg-success">Satış</span>
+                                {% else %}
+                                <span class="badge bg-danger">Alış</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ fatura.cari.unvan }}</td>
+                            <td>{{ fatura.genel_toplam|floatformat:2 }} ₺</td>
+                            <td>{{ fatura.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'fatura' fatura.pk %}" class="btn btn-sm btn-success"
+                                    title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'fatura' fatura.pk %}" class="btn btn-sm btn-danger"
+                                    title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">Silinen fatura kaydı bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <!-- Genel Seçenekler Tab -->
+    <div class="tab-pane fade" id="genel-secenek" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Genel Seçenekler</h5>
+                {% if silinen_genel_secenekler.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('genelsecenek')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Başlık</th>
+                            <th>Oluşturma</th>
+                            <th>Silinme</th>
+                            <th>Silen</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for secenek in silinen_genel_secenekler %}
+                        <tr>
+                            <td>{{ secenek.baslik }}</td>
+                            <td>{{ secenek.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ secenek.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ secenek.silen_kullanici.username }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'genelsecenek' secenek.pk %}"
+                                    class="btn btn-sm btn-success" title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'genelsecenek' secenek.pk %}"
+                                    class="btn btn-sm btn-danger" title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">Silinen genel seçenek bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Genel Seçenek Değerleri Tab -->
+    <div class="tab-pane fade" id="genel-secenek-deger" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Silinen Genel Seçenek Değerleri</h5>
+                {% if silinen_genel_secenek_degerler.count > 0 %}
+                <button class="btn btn-danger btn-sm" onclick="tumunuSil('genelsecenekdeger')">
+                    <i class="bi bi-trash3"></i> HEPSİNİ KALICI OLARAK SİL
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Seçenek</th>
+                            <th>Değer</th>
+                            <th>Fiyat Tipi</th>
+                            <th>Fiyat Değeri</th>
+                            <th>Varsayılan</th>
+                            <th>Silinme</th>
+                            <th>Silen</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deger in silinen_genel_secenek_degerler %}
+                        <tr>
+                            <td>
+                                <strong>{{ deger.secenek.baslik }}</strong>
+                                {% if deger.secenek.silindi %}
+                                <span class="badge bg-warning">Seçenek de silinmiş</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ deger.deger }}</td>
+                            <td>{{ deger.get_fiyat_tipi_display }}</td>
+                            <td>
+                                {% if deger.fiyat_tipi == 'yuzde' %}%{% endif %}
+                                {{ deger.fiyat_degeri }}
+                            </td>
+                            <td>
+                                {% if deger.varsayilan %}
+                                <span class="badge bg-primary">Evet</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Hayır</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ deger.silinme_tarihi|date:"d.m.Y H:i" }}</td>
+                            <td>{{ deger.silen_kullanici.username }}</td>
+                            <td>
+                                <a href="{% url 'kayit_geri_yukle' 'genelsecenekdeger' deger.pk %}"
+                                    class="btn btn-sm btn-success" title="Geri Yükle">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{% url 'kayit_kalici_sil' 'genelsecenekdeger' deger.pk %}"
+                                    class="btn btn-sm btn-danger" title="Kalıcı Sil">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">Silinen genel seçenek değeri bulunmamaktadır.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+<!-- Toplu Silme Formu (Gizli) -->
+<form id="topluSilForm" method="post" style="display: none;">
+    {% csrf_token %}
+</form>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function tumunuSil(kategori) {
+        let mesaj = '';
+        if (kategori === 'cari') {
+            mesaj = 'TÜM silinen cari kayıtlarını KALICI olarak silmek istediğinize emin misiniz?';
+        } else if (kategori === 'grup') {
+            mesaj = 'TÜM silinen cari gruplarını KALICI olarak silmek istediğinize emin misiniz?';
+        } else if (kategori === 'stok') {
+            mesaj = 'TÜM silinen stok kayıtlarını KALICI olarak silmek istediğinize emin misiniz?';
+        } else if (kategori === 'carihareket') {
+            mesaj = 'TÜM silinen cari hareket kayıtlarını KALICI olarak silmek istediğinize emin misiniz?';
+        } else if (kategori === 'fatura') {  // YENİ
+            mesaj = 'TÜM silinen faturaları KALICI olarak silmek istediğinize emin misiniz?';
+        } else if (kategori === 'genelsecenek') {
+            mesaj = 'TÜM silinen genel seçenekleri KALICI olarak silmek istediğinize emin misiniz?';
+        } else if (kategori === 'genelsecenekdeger') {
+            mesaj = 'TÜM silinen genel seçenek değerlerini KALICI olarak silmek istediğinize emin misiniz?';
+        }
+
+        if (confirm(mesaj + '\n\nBu işlem GERİ ALINAMAZ!')) {
+            const form = document.getElementById('topluSilForm');
+            form.action = "{% url 'tumunu_kalici_sil' 'KATEGORI' %}".replace('KATEGORI', kategori);
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

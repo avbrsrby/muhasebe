@@ -1,0 +1,171 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Yetkili Menü{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-gear-fill"></i> Sistem Yönetimi</h2>
+            <p class="text-muted">Sistem tanımlamalarını ve ayarlarını bu bölümden yönetebilirsiniz.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Para Birimleri -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="display-4 text-primary mb-3">
+                        <i class="bi bi-currency-exchange"></i>
+                    </div>
+                    <h5 class="card-title">Para Birimleri</h5>
+                    <p class="card-text text-muted">Sistemde kullanılan para birimlerini yönetin</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge bg-secondary">{{ para_birimleri }} Kayıt</span>
+                        <a href="{% url 'para_birimi_list' %}" class="btn btn-sm btn-primary">
+                            Yönet <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kasalar -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="display-4 text-success mb-3">
+                        <i class="bi bi-safe"></i>
+                    </div>
+                    <h5 class="card-title">Kasalar</h5>
+                    <p class="card-text text-muted">Nakit kasa tanımlamalarını yönetin</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge bg-secondary">{{ kasalar }} Kayıt</span>
+                        <a href="{% url 'kasa_list' %}" class="btn btn-sm btn-primary">
+                            Yönet <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bankalar -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="display-4 text-info mb-3">
+                        <i class="bi bi-bank"></i>
+                    </div>
+                    <h5 class="card-title">Banka Hesapları</h5>
+                    <p class="card-text text-muted">Banka hesaplarını yönetin</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge bg-secondary">{{ bankalar }} Kayıt</span>
+                        <a href="{% url 'banka_list' %}" class="btn btn-sm btn-primary">
+                            Yönet <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POS Cihazları -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="display-4 text-warning mb-3">
+                        <i class="bi bi-credit-card-2-front"></i>
+                    </div>
+                    <h5 class="card-title">POS Cihazları</h5>
+                    <p class="card-text text-muted">POS cihazlarını yönetin</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge bg-secondary">{{ poslar }} Kayıt</span>
+                        <a href="{% url 'pos_list' %}" class="btn btn-sm btn-primary">
+                            Yönet <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Genel Stok Seçenekleri -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <div class="display-4 text-danger mb-3">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h5 class="card-title">Genel Stok Seçenekleri</h5>
+                    <p class="card-text text-muted">Tüm stoklarda kullanılabilecek seçenekleri yönetin</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge bg-secondary">{{ genel_secenekler }} Kayıt</span>
+                        <a href="{% url 'genel_stok_secenek_list' %}" class="btn btn-sm btn-primary">
+                            Yönet <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+    </div>
+
+    <!-- Diğer Ayarlar -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4><i class="bi bi-tools"></i> Diğer İşlemler</h4>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Silinen Kayıtlar -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-trash3 text-danger"></i> Silinen Kayıtlar
+                    </h5>
+                    <p class="card-text">Silinen kayıtları görüntüleyin ve geri yükleyin</p>
+                    <a href="{% url 'silinen_kayitlar' %}" class="btn btn-outline-danger btn-sm">
+                        Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yedekleme -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-cloud-download text-primary"></i> Yedekleme
+                    </h5>
+                    <p class="card-text">Sistem verilerini yedekleyin</p>
+                    <button class="btn btn-outline-primary btn-sm" disabled>
+                        Yakında...
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kullanıcı Yönetimi -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people text-success"></i> Kullanıcı Yönetimi
+                    </h5>
+                    <p class="card-text">Sistem kullanıcılarını yönetin</p>
+                    <a href="/admin/auth/user/" class="btn btn-outline-success btn-sm">
+                        Django Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

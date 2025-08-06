@@ -1,0 +1,300 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}{{ title|default:"Cari Ekle" }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3>{{ title|default:"Yeni Cari Ekle" }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="cariForm">
+                    {% csrf_token %}
+                    
+                    <!-- Ünvan - En üstte -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ form.unvan.label }} <span class="text-danger">*</span></label>
+                        {{ form.unvan }}
+                    </div>
+                    
+                    <!-- Cari Grubu -->
+                    <div class="mb-4">
+                        <label class="form-label">{{ form.grup.label }} <span class="text-danger">*</span></label>
+                        {{ form.grup }}
+                    </div>
+
+                    <!-- Durum -->
+                    <h5 class="mt-4 mb-3 text-primary">Durum</h5>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.aktif }}
+                            <label class="form-check-label" for="{{ form.aktif.id_for_label }}">
+                                Aktif (İşaretli ise cari kartı aktiftir)
+                            </label>
+                        </div>
+                    </div>
+
+                    
+                    <!-- Yetkili Bilgileri -->
+                    <h5 class="mt-4 mb-3 text-primary">Yetkili Bilgileri</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.yetkili_adi.label }} <span class="text-danger">*</span></label>
+                                {{ form.yetkili_adi }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.telefon.label }} <span class="text-danger">*</span></label>
+                                {{ form.telefon }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.yetkili_tel1.label }}</label>
+                                {{ form.yetkili_tel1 }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.yetkili_tel2.label }}</label>
+                                {{ form.yetkili_tel2 }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.yetkili_tel3.label }}</label>
+                                {{ form.yetkili_tel3 }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Adres Bilgileri -->
+                    <h5 class="mt-4 mb-3 text-primary">Adres Bilgileri</h5>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.adres.label }} <span class="text-danger">*</span></label>
+                        {{ form.adres }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.il.label }} <span class="text-danger">*</span></label>
+                                {{ form.il }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.ilce.label }} <span class="text-danger">*</span></label>
+                                {{ form.ilce }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fatura Bilgileri -->
+                    <h5 class="mt-4 mb-3 text-primary">Fatura Bilgileri</h5>
+                    
+                    <!-- Firma Tipi Seçimi -->
+                    <div class="mb-3">
+                        <label class="form-label">Firma Tipi</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="firma_tipi" id="sahis" value="sahis" checked>
+                                <label class="form-check-label" for="sahis">
+                                    Şahıs Firması
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="firma_tipi" id="sirket" value="sirket">
+                                <label class="form-check-label" for="sirket">
+                                    Şirket
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Şahıs Firması Alanları -->
+                    <div id="sahis_alanlari">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.tc_kimlik.label }}</label>
+                                    {{ form.tc_kimlik }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.vergi_dairesi.label }}</label>
+                                    {{ form.vergi_dairesi }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Şirket Alanları -->
+                    <div id="sirket_alanlari" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.sirket_unvani.label }}</label>
+                            {{ form.sirket_unvani }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.vergi_no.label }}</label>
+                                    {{ form.vergi_no }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.vergi_dairesi.label }}</label>
+                                    {{ form.vergi_dairesi }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mali Bilgiler -->
+                    <h5 class="mt-4 mb-3 text-primary">Mali Bilgiler</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.risk_limiti.label }}</label>
+                                <div class="input-group">
+                                    {{ form.risk_limiti }}
+                                    <span class="input-group-text">₺</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notlar -->
+                    <h5 class="mt-4 mb-3 text-primary">Notlar</h5>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.notlar.label }}</label>
+                        {{ form.notlar }}
+                        <small class="text-muted">Bu alana özel notlarınızı ekleyebilirsiniz.</small>
+                    </div>
+
+                    <!-- Form Hataları -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Lütfen aşağıdaki hataları düzeltin:</strong>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Butonlar -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'cari_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// İl değiştiğinde ilçeleri güncelle
+document.getElementById('il_select').addEventListener('change', function() {
+    var ilId = this.value;
+    var ilceSelect = document.getElementById('ilce_select');
+    
+    // İlçe seçimini temizle
+    ilceSelect.innerHTML = '<option value="">Seçiniz...</option>';
+    
+    if (ilId) {
+        // AJAX ile ilçeleri getir
+        fetch(`/ajax/ilceler/${ilId}/`)
+            .then(response => response.json())
+            .then(data => {
+                data.ilceler.forEach(function(ilce) {
+                    var option = document.createElement('option');
+                    option.value = ilce.id;
+                    option.textContent = ilce.ad;
+                    ilceSelect.appendChild(option);
+                });
+            });
+    }
+});
+
+// Firma tipi değiştiğinde alanları göster/gizle
+document.addEventListener('DOMContentLoaded', function() {
+    const sahisRadio = document.getElementById('sahis');
+    const sirketRadio = document.getElementById('sirket');
+    const sahisAlanlari = document.getElementById('sahis_alanlari');
+    const sirketAlanlari = document.getElementById('sirket_alanlari');
+    
+    function toggleFirmaTipi() {
+        if (sahisRadio.checked) {
+            sahisAlanlari.style.display = 'block';
+            sirketAlanlari.style.display = 'none';
+            // Şirket alanlarını temizle
+            document.querySelector('[name="sirket_unvani"]').value = '';
+            document.querySelector('[name="vergi_no"]').value = '';
+        } else {
+            sahisAlanlari.style.display = 'none';
+            sirketAlanlari.style.display = 'block';
+            // Şahıs alanlarını temizle
+            document.querySelector('[name="tc_kimlik"]').value = '';
+        }
+    }
+    
+    sahisRadio.addEventListener('change', toggleFirmaTipi);
+    sirketRadio.addEventListener('change', toggleFirmaTipi);
+    
+    // Sayfa yüklendiğinde kontrol et
+    toggleFirmaTipi();
+});
+
+// Form validasyon
+document.getElementById('cariForm').addEventListener('submit', function(e) {
+    const firmaTipi = document.querySelector('input[name="firma_tipi"]:checked').value;
+    
+    if (firmaTipi === 'sahis') {
+        const tcKimlik = document.querySelector('[name="tc_kimlik"]').value;
+        if (!tcKimlik) {
+            alert('Şahıs firması için TC Kimlik No zorunludur!');
+            e.preventDefault();
+            return false;
+        }
+    } else if (firmaTipi === 'sirket') {
+        const sirketUnvani = document.querySelector('[name="sirket_unvani"]').value;
+        const vergiNo = document.querySelector('[name="vergi_no"]').value;
+        
+        if (!sirketUnvani || !vergiNo) {
+            alert('Şirket için Şirket Ünvanı ve Vergi No zorunludur!');
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+</script>
+{% endblock %}
