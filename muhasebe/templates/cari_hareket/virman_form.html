@@ -1,0 +1,628 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cari-secim-container {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+        background-color: #f8f9fa;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .secili-cari {
+        font-weight: 500;
+        color: #495057;
+    }
+
+
+
+
+
+
+    .virman-card {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .virman-card.gonderen {
+        border-color: #dc3545;
+    }
+
+    .virman-card.alici {
+        border-color: #28a745;
+    }
+
+    .virman-card .card-header {
+        font-weight: bold;
+        color: white;
+    }
+
+    .virman-card.gonderen .card-header {
+        background-color: #dc3545;
+    }
+
+    .virman-card.alici .card-header {
+        background-color: #28a745;
+    }
+
+    .virman-arrow {
+        text-align: center;
+        font-size: 2rem;
+        color: #6c757d;
+        margin: 20px 0;
+    }
+
+    .tutar-input-group {
+        position: relative;
+    }
+
+    .tutar-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Lütfen aşağıdaki hataları düzeltin:</strong>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" id="virmanForm">
+                        {% csrf_token %}
+
+                        <!-- Tarih -->
+                        <div class="row mb-4">
+                            <div class="col-md-4 mx-auto">
+                                <label class="form-label">İşlem Tarihi ve Saati <span
+                                        class="text-danger">*</span></label>
+                                {{ form.tarih }}
+                            </div>
+                        </div>
+
+
+                        <!-- Gönderici Cari -->
+                        <div class="card virman-card alici">
+                            <div class="card-header">
+                                <i class="bi bi-arrow-down-circle"></i> PARA GÖNDEREN CARİ (GİRİŞ)
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label class="form-label">{{ form.alici_cari.label }} <span
+                                                class="text-danger">*</span></label>
+                                        <div class="cari-secim-container">
+                                            <span id="aliciCariText" class="secili-cari">Cari seçiniz...</span>
+                                            <button type="button" class="btn btn-sm btn-primary cari-sec-btn"
+                                                onclick="cariSec('alici')">
+                                                <i class="bi bi-search"></i> Cari Seç
+                                            </button>
+                                        </div>
+                                        <input type="hidden" id="id_alici_cari" name="alici_cari" value="">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">{{ form.alici_para_birimi.label }} <span
+                                                class="text-danger">*</span></label>
+                                        {{ form.alici_para_birimi }}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label tutar-label" id="aliciTutarLabel">{{
+                                            form.alici_tutar.label }} <span class="text-danger">*</span></label>
+                                        {{ form.alici_tutar }}
+                                        <small class="form-text text-muted">Bu cariye giriş yapılacak tutar</small>
+
+                                        <!-- Döviz İşlemleri -->
+                                        <div id="aliciDovizToggle" style="display: none;" class="mt-3">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                id="aliciDovizBtn">
+                                                <i class="bi bi-currency-exchange"></i> Döviz İşlemleri
+                                            </button>
+                                        </div>
+
+                                        <div id="aliciDovizPanel" style="display: none;" class="mt-3">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <label class="form-label">Döviz Kuru</label>
+                                                            <input type="number" id="aliciDovizKuru"
+                                                                class="form-control" step="0.0001"
+                                                                placeholder="1 ? = ? TL">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <label class="form-label"
+                                                                id="aliciDovizLabel">Karşılığı</label>
+                                                            <input type="number" id="aliciTlTutar" class="form-control"
+                                                                step="0.01" placeholder="0.00">
+                                                            <small class="form-text text-muted">Karşı taraf para birimi
+                                                                cinsinden tutar</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Virman Ok İşareti -->
+                        <div class="virman-arrow">
+                            <i class="bi bi-arrow-down-circle-fill"></i>
+                        </div>
+
+                        <!-- Alıcı Cari -->
+                        <div class="card virman-card gonderen">
+                            <div class="card-header">
+                                <i class="bi bi-arrow-up-circle"></i> PARA ALAN CARİ (ÇIKIŞ)
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label class="form-label">{{ form.gonderen_cari.label }} <span
+                                                class="text-danger">*</span></label>
+                                        <div class="cari-secim-container">
+                                            <span id="gonderenCariText" class="secili-cari">Cari seçiniz...</span>
+                                            <button type="button" class="btn btn-sm btn-primary cari-sec-btn"
+                                                onclick="cariSec('gonderen')">
+                                                <i class="bi bi-search"></i> Cari Seç
+                                            </button>
+                                        </div>
+                                        <input type="hidden" id="id_gonderen_cari" name="gonderen_cari" value="">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">{{ form.gonderen_para_birimi.label }} <span
+                                                class="text-danger">*</span></label>
+                                        {{ form.gonderen_para_birimi }}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label tutar-label" id="gonderenTutarLabel">{{
+                                            form.gonderen_tutar.label }} <span class="text-danger">*</span></label>
+                                        {{ form.gonderen_tutar }}
+                                        <small class="form-text text-muted">Bu cariden çıkış yapılacak tutar</small>
+
+                                        <!-- Döviz İşlemleri -->
+                                        <div id="gonderenDovizToggle" style="display: none;" class="mt-3">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                id="gonderenDovizBtn">
+                                                <i class="bi bi-currency-exchange"></i> Döviz İşlemleri
+                                            </button>
+                                        </div>
+
+                                        <div id="gonderenDovizPanel" style="display: none;" class="mt-3">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <label class="form-label">Döviz Kuru</label>
+                                                            <input type="number" id="gonderenDovizKuru"
+                                                                class="form-control" step="0.0001"
+                                                                placeholder="1 ? = ? TL">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            <label class="form-label"
+                                                                id="gonderenDovizLabel">Karşılığı</label>
+                                                            <input type="number" id="gonderenTlTutar"
+                                                                class="form-control" step="0.01" placeholder="0.00">
+                                                            <small class="form-text text-muted">Karşı taraf para birimi
+                                                                cinsinden tutar</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Gizli alanlar -->
+                        <input type="hidden" id="gonderen_doviz_kuru" name="gonderen_doviz_kuru" value="">
+                        <input type="hidden" id="gonderen_doviz_tutar" name="gonderen_doviz_tutar" value="">
+                        <input type="hidden" id="alici_doviz_kuru" name="alici_doviz_kuru" value="">
+                        <input type="hidden" id="alici_doviz_tutar" name="alici_doviz_tutar" value="">
+
+                        <!-- Açıklama -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.aciklama.label }}</label>
+                            {{ form.aciklama }}
+                        </div>
+
+                        <!-- Butonlar -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'cari_hareket_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Geri
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-save"></i> Virman Yap
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Döviz kurlarını tanımla
+        var dovizKurlari = {};
+        {% if doviz_kurlari.USD %}
+        dovizKurlari['USD'] = parseFloat("{{ doviz_kurlari.USD }}".replace(",", "."));
+        {% else %}
+        dovizKurlari['USD'] = 0;
+        {% endif %}
+
+        {% if doviz_kurlari.EUR %}
+        dovizKurlari['EUR'] = parseFloat("{{ doviz_kurlari.EUR }}".replace(",", "."));
+        {% else %}
+        dovizKurlari['EUR'] = 0;
+        {% endif %}
+
+        // Global değişken
+        var aktifCariTip = null;
+
+
+        // Cari seç fonksiyonu
+        // Cari seç fonksiyonu
+        window.cariSec = function (tip) {
+            aktifCariTip = tip;
+
+            // Global cari arama modal'ını aç
+            $('#globalCariSearchModal').modal('show');
+
+            // Input'u temizle ve focus yap
+            setTimeout(function () {
+                $('#globalCariSearchInput').val('').focus();
+                $('#globalCariSearchResults').html('');
+            }, 100);
+
+            // Cari seçildiğinde çalışacak fonksiyonu override et
+            $(document).off('click', '.cari-select-item').on('click', '.cari-select-item', function (e) {
+                e.preventDefault();
+
+                var cari = {
+                    id: $(this).data('id'),
+                    kod: $(this).data('kod'),
+                    unvan: $(this).data('unvan'),
+                    bakiye: $(this).data('bakiye')
+                };
+
+                if (aktifCariTip === 'alici') {
+                    $('#id_alici_cari').val(cari.id);
+                    $('#aliciCariText').text(cari.kod + ' - ' + cari.unvan);
+                } else if (aktifCariTip === 'gonderen') {
+                    $('#id_gonderen_cari').val(cari.id);
+                    $('#gonderenCariText').text(cari.kod + ' - ' + cari.unvan);
+                }
+
+                $('#globalCariSearchModal').modal('hide');
+            });
+        };
+
+
+        // Para birimi değişikliklerini kontrol et
+        function checkDovizPanels() {
+            var gonderenPB = $('#id_gonderen_para_birimi').find('option:selected').text().split(' - ')[0];
+            var aliciPB = $('#id_alici_para_birimi').find('option:selected').text().split(' - ')[0];
+
+            // Label'ları sabit TL tut
+            $('#gonderenTutarLabel').html('Tutar (TL) <span class="text-danger">*</span>');
+            $('#aliciTutarLabel').html('Tutar (TL) <span class="text-danger">*</span>');
+
+            // Her iki para birimi aynıysa döviz paneli gerekmez
+            if (gonderenPB === aliciPB) {
+                $('#gonderenDovizPanel, #aliciDovizPanel').hide();
+                $('#gonderenDovizKuru, #aliciDovizKuru').prop('required', false);
+                $('#gonderenDovizToggle, #aliciDovizToggle').hide();
+
+                // Para birimi alanları aktif olsun
+                $('#id_alici_para_birimi, #id_gonderen_para_birimi').css({
+                    'pointer-events': 'auto',
+                    'background-color': '',
+                    'opacity': '1'
+                });
+                return;
+            }
+
+            if (gonderenPB !== 'TL') {
+                $('#gonderenDovizPanel').show();
+                $('#gonderenDovizKuru').prop('required', true);
+                $('#gonderenDovizToggle').hide();
+
+                // Otomatik kur doldur
+                if (dovizKurlari[gonderenPB] > 0) {
+                    $('#gonderenDovizKuru').val(dovizKurlari[gonderenPB]);
+                    // Tutar varsa hesapla
+                    if ($('#id_gonderen_tutar').val()) {
+                        $('#id_gonderen_tutar').trigger('input');
+                    }
+                }
+
+                $('#aliciDovizPanel').hide();
+                $('#aliciDovizToggle').hide();
+                $('#aliciDovizKuru').prop('required', false);
+
+                // Alıcı kilitli
+                $('#id_alici_para_birimi').css({
+                    'pointer-events': 'none',
+                    'background-color': '#e9ecef',
+                    'opacity': '0.7'
+                });
+
+                // Gönderen aktif
+                $('#id_gonderen_para_birimi').css({
+                    'pointer-events': 'auto',
+                    'background-color': '',
+                    'opacity': '1'
+                });
+
+            } else if (aliciPB !== 'TL') {
+                $('#aliciDovizPanel').show();
+                $('#aliciDovizKuru').prop('required', true);
+                $('#aliciDovizToggle').hide();
+
+                // Otomatik kur doldur
+                if (dovizKurlari[aliciPB] > 0) {
+                    $('#aliciDovizKuru').val(dovizKurlari[aliciPB]);
+                    // Tutar varsa hesapla
+                    if ($('#id_alici_tutar').val()) {
+                        $('#id_alici_tutar').trigger('input');
+                    }
+                }
+
+                $('#gonderenDovizPanel').hide();
+                $('#gonderenDovizToggle').hide();
+                $('#gonderenDovizKuru').prop('required', false);
+
+                // Gönderen kilitli
+                $('#id_gonderen_para_birimi').css({
+                    'pointer-events': 'none',
+                    'background-color': '#e9ecef',
+                    'opacity': '0.7'
+                });
+
+                // Alıcı aktif
+                $('#id_alici_para_birimi').css({
+                    'pointer-events': 'auto',
+                    'background-color': '',
+                    'opacity': '1'
+                });
+
+            } else {
+                // Diğer tüm durumlar (ikisi de TL değil ama farklılar vs.)
+                $('#gonderenDovizPanel, #aliciDovizPanel').hide();
+                $('#gonderenDovizKuru, #aliciDovizKuru').prop('required', false);
+                $('#gonderenDovizToggle, #aliciDovizToggle').hide();
+
+                $('#id_alici_para_birimi, #id_gonderen_para_birimi').css({
+                    'pointer-events': 'auto',
+                    'background-color': '',
+                    'opacity': '1'
+                });
+            }
+        }
+
+
+
+
+
+
+        // Para birimi değiştiğinde
+        $('#id_gonderen_para_birimi, #id_alici_para_birimi').change(function () {
+            checkDovizPanels();
+        });
+
+        // Döviz panellerini aç/kapa
+        $('#gonderenDovizBtn').click(function () {
+            // Eğer alıcı paneli açıksa engelle
+            if ($('#aliciDovizPanel').is(':visible') || $('#aliciTlTutar').val() || $('#aliciDovizKuru').val()) {
+                alert('Önce göndericideki döviz işlemini kapatın veya temizleyin.');
+                return;
+            }
+
+            $('#gonderenDovizPanel').slideToggle();
+            $(this).toggleClass('btn-outline-primary btn-primary');
+        });
+
+        $('#aliciDovizBtn').click(function () {
+            // Eğer gönderen paneli açıksa engelle
+            if ($('#gonderenDovizPanel').is(':visible') || $('#gonderenTlTutar').val() || $('#gonderenDovizKuru').val()) {
+                alert('Önce alıcıdaki döviz işlemini kapatın veya temizleyin.');
+                return;
+            }
+
+            $('#aliciDovizPanel').slideToggle();
+            $(this).toggleClass('btn-outline-primary btn-primary');
+        });
+
+        // PARA ALAN CARİ (ALTTAKİ - GONDEREN) İŞLEMLERİ
+        // Gönderen tutar değiştiğinde
+        $('#id_gonderen_tutar').on('input', function () {
+            var gonderenPB = $('#id_gonderen_para_birimi').find('option:selected').text().split(' - ')[0];
+            var aliciPB = $('#id_alici_para_birimi').find('option:selected').text().split(' - ')[0];
+
+            // Aynı para birimiyse direkt kopyala
+            // Eğer alıcı döviz paneli açık değilse, alıcı tutarı otomatik güncelle
+            if (!$('#aliciDovizPanel').is(':visible')) {
+                $('#id_alici_tutar').val($(this).val());
+            }
+
+            // Döviz paneli açıksa hesapla
+            if ($('#gonderenDovizPanel').is(':visible')) {
+                var tutar = parseFloat($(this).val()) || 0;
+                var kur = parseFloat($('#gonderenDovizKuru').val()) || 0;
+                if (tutar > 0 && kur > 0) {
+                    // Gönderen EUR ise: EUR * KUR = TL
+                    $('#gonderenTlTutar').val((tutar / kur).toFixed(2));
+                }
+            }
+        });
+
+        // Gönderen kur değiştiğinde
+        $('#gonderenDovizKuru').on('input', function () {
+            var tutar = parseFloat($('#id_gonderen_tutar').val()) || 0;
+            var kur = parseFloat($(this).val()) || 0;
+            if (tutar > 0 && kur > 0) {
+                // EUR * KUR = TL
+                $('#gonderenTlTutar').val((tutar / kur).toFixed(2));
+            }
+        });
+
+        // Gönderen döviz karşılığı (TL) değiştiğinde
+        $('#gonderenTlTutar').on('input', function () {
+            var tlTutar = parseFloat($(this).val()) || 0;
+            var kur = parseFloat($('#gonderenDovizKuru').val()) || 0;
+            if (tlTutar > 0 && kur > 0) {
+                // TL / KUR = EUR
+                $('#id_gonderen_tutar').val((tlTutar / kur).toFixed(2));
+            }
+        });
+
+        // PARA GÖNDEREN CARİ (ÜSTTEKİ - ALICI) İŞLEMLERİ
+        // Alıcı tutar değiştiğinde
+        $('#id_alici_tutar').on('input', function () {
+            var gonderenPB = $('#id_gonderen_para_birimi').find('option:selected').text().split(' - ')[0];
+            var aliciPB = $('#id_alici_para_birimi').find('option:selected').text().split(' - ')[0];
+
+            // Aynı para birimiyse direkt kopyala
+            // Eğer gönderen döviz paneli açık değilse, gönderen tutarı otomatik güncelle
+            if (!$('#gonderenDovizPanel').is(':visible')) {
+                $('#id_gonderen_tutar').val($(this).val());
+            }
+
+            // Döviz paneli açıksa hesapla
+            if ($('#aliciDovizPanel').is(':visible')) {
+                var tutar = parseFloat($(this).val()) || 0;
+                var kur = parseFloat($('#aliciDovizKuru').val()) || 0;
+                if (tutar > 0 && kur > 0) {
+                    // Alıcı TL ise: TL / KUR = EUR
+                    $('#aliciTlTutar').val((tutar / kur).toFixed(2));
+                }
+            }
+        });
+
+        // Alıcı kur değiştiğinde
+        $('#aliciDovizKuru').on('input', function () {
+            var tutar = parseFloat($('#id_alici_tutar').val()) || 0;
+            var kur = parseFloat($(this).val()) || 0;
+            if (tutar > 0 && kur > 0) {
+                // TL / KUR = EUR
+                $('#aliciTlTutar').val((tutar / kur).toFixed(2));
+            }
+        });
+
+        // Alıcı döviz karşılığı değiştiğinde
+        $('#aliciTlTutar').on('input', function () {
+            var dovizKarsiligi = parseFloat($(this).val()) || 0;
+            var kur = parseFloat($('#aliciDovizKuru').val()) || 0;
+            if (dovizKarsiligi > 0 && kur > 0) {
+                // EUR * KUR = TL
+                $('#id_alici_tutar').val((dovizKarsiligi / kur).toFixed(2));
+            }
+        });
+
+        // Form submit
+        $('#virmanForm').submit(function (e) {
+            // DÖVİZ PANELİ AÇIKSA, DÖVİZ KARŞILIĞI TUTARLARI ANA TUTAR ALANLARINA KOPYALA
+
+            // Gönderen (Para Alan) için
+            if ($('#gonderenDovizPanel').is(':visible')) {
+                var gonderenDovizTutar = $('#gonderenTlTutar').val();
+                if (gonderenDovizTutar) {
+                    // Döviz karşılığı tutarı ana tutar alanına kopyala
+                    $('#id_gonderen_tutar').val(gonderenDovizTutar);
+                }
+
+                // Hidden alanlara da kopyala
+                $('#gonderen_doviz_kuru').val($('#gonderenDovizKuru').val());
+                $('#gonderen_doviz_tutar').val(gonderenDovizTutar);
+            }
+
+            // Alıcı (Para Gönderen) için
+            if ($('#aliciDovizPanel').is(':visible')) {
+                var aliciDovizTutar = $('#aliciTlTutar').val();
+                if (aliciDovizTutar) {
+                    // Döviz karşılığı tutarı ana tutar alanına kopyala
+                    $('#id_alici_tutar').val(aliciDovizTutar);
+                }
+
+                // Hidden alanlara da kopyala
+                $('#alici_doviz_kuru').val($('#aliciDovizKuru').val());
+                $('#alici_doviz_tutar').val(aliciDovizTutar);
+            }
+
+            // Validasyonlar...
+            var gonderenTutar = parseFloat($('#id_gonderen_tutar').val()) || 0;
+            var aliciTutar = parseFloat($('#id_alici_tutar').val()) || 0;
+
+            if (gonderenTutar <= 0 || aliciTutar <= 0) {
+                alert('Lütfen tutarları kontrol edin!');
+                e.preventDefault();
+                return false;
+            }
+
+            var gonderenCari = $('#id_gonderen_cari').val();
+            var aliciCari = $('#id_alici_cari').val();
+
+            if (!gonderenCari || !aliciCari) {
+                alert('Lütfen gönderen ve alıcı carileri seçin!');
+                e.preventDefault();
+                return false;
+            }
+
+            if (gonderenCari === aliciCari) {
+                alert('Gönderen ve alıcı cari aynı olamaz!');
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // İlk yüklemede kontrol et
+        checkDovizPanels();
+    });
+</script>
+{% endblock %}

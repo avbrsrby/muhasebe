@@ -39,10 +39,8 @@
                             <td><strong>{{ kasa.kod }}</strong></td>
                             <td>{{ kasa.ad }}</td>
                             <td>{{ kasa.para_birimi.kod }}</td>
-                            <td class="text-end">
-                                <span class="{% if kasa.bakiye < 0 %}text-danger{% elif kasa.bakiye > 0 %}text-success{% endif %}">
-                                    {{ kasa.bakiye|floatformat:2 }} {{ kasa.para_birimi.sembol }}
-                                </span>
+                            <td class="text-end {% if kasa.bakiye < 0 %}text-danger{% elif kasa.bakiye > 0 %}text-success{% endif %}">
+                                <strong>{{ kasa.bakiye|floatformat:2 }} {{ kasa.para_birimi.kod }}</strong>
                             </td>
                             <td>
                                 {% if kasa.aktif %}

@@ -1,0 +1,117 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Stok Grupları{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Stok Grupları</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Kod</th>
+                                    <th>Grup Adı</th>
+                                    <th>Üst Grup</th>
+                                    <th>Seviye</th>
+                                    <th>Durum</th>
+                                    <th width="120">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grup in gruplar %}
+                                <tr>
+                                    <td><strong>{{ grup.kod }}</strong></td>
+                                    <td>
+                                        {% if grup.seviye > 1 %}
+                                            {% for i in "x"|rjust:grup.seviye %}
+                                                &nbsp;&nbsp;
+                                            {% endfor %}
+                                            <i class="bi bi-arrow-return-right text-muted"></i>
+                                        {% endif %}
+                                        {{ grup.ad }}
+                                    </td>
+                                    <td>{{ grup.ust_grup|default:"-" }}</td>
+                                    <td>{{ grup.seviye }}</td>
+                                    <td>
+                                        {% if grup.aktif %}
+                                            <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'stok_grup_duzenle' grup.pk %}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" onclick="grupSil({{ grup.pk }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Henüz stok grubu tanımlanmamış.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Yeni Stok Grubu</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.ad.label }}</label>
+                            {{ form.ad }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.ust_grup.label }}</label>
+                            {{ form.ust_grup }}
+                            <small class="text-muted">Alt grup oluşturmak için üst grup seçin</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Kaydet
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function grupSil(id) {
+    if (confirm('Bu stok grubunu silmek istediğinize emin misiniz?')) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/stok/grup/' + id + '/sil/';
+        
+        var csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

@@ -5,10 +5,11 @@
 {% block content %}
 <h1 class="mb-4">Hoş Geldiniz, {{ user.get_full_name|default:user.username }}!</h1>
 
+<!-- İlk Satır - Özet Kartları -->
 <div class="row">
     <!-- Cari Kartlar -->
-    <div class="col-md-3 mb-4">
-        <div class="card dashboard-card bg-primary text-white">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card bg-primary text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -23,8 +24,8 @@
     </div>
 
     <!-- Stok Kartlar -->
-    <div class="col-md-3 mb-4">
-        <div class="card dashboard-card bg-success text-white">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card bg-success text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -39,8 +40,8 @@
     </div>
 
     <!-- Kasalar -->
-    <div class="col-md-3 mb-4">
-        <div class="card dashboard-card bg-warning text-white">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card bg-warning text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -55,8 +56,8 @@
     </div>
 
     <!-- Faturalar -->
-    <div class="col-md-3 mb-4">
-        <div class="card dashboard-card bg-info text-white">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card bg-info text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -71,25 +72,76 @@
     </div>
 </div>
 
+<!-- İkinci Satır - Bakiye Özeti -->
+<div class="row">
+    <!-- Toplam Borç -->
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card dashboard-card bg-danger text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Toplam Borç</h5>
+                        <h2>{{ toplam_borc|floatformat:2 }} TL</h2>
+                        <small>{{ toplam_borc_sayisi }} Cari</small>
+                    </div>
+                    <i class="bi bi-arrow-down-circle-fill" style="font-size: 3rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toplam Alacak -->
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card dashboard-card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Toplam Alacak</h5>
+                        <h2>{{ toplam_alacak|floatformat:2 }} TL</h2>
+                        <small>{{ toplam_alacak_sayisi }} Cari</small>
+                    </div>
+                    <i class="bi bi-arrow-up-circle-fill" style="font-size: 3rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Bakiye -->
+    <div class="col-xl-4 col-md-12 mb-4">
+        <div class="card dashboard-card bg-secondary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Net Bakiye</h5>
+                        <h2>{{ net_bakiye|floatformat:2 }} TL</h2>
+                        <small>Alacak - Borç</small>
+                    </div>
+                    <i class="bi bi-calculator-fill" style="font-size: 3rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Hızlı İşlemler -->
-<div class="row mt-4">
-    <div class="col-md-12">
+<div class="row">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Hızlı İşlemler</h5>
             </div>
             <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="{% url 'cari_ekle' %}" class="btn btn-outline-primary">
+                <div class="btn-group flex-wrap" role="group">
+                    <a href="{% url 'cari_ekle' %}" class="btn btn-outline-primary mb-2 me-2">
                         <i class="bi bi-person-plus"></i> Yeni Cari
                     </a>
-                    <a href="{% url 'stok_ekle' %}" class="btn btn-outline-success">
+                    <a href="{% url 'stok_ekle' %}" class="btn btn-outline-success mb-2 me-2">
                         <i class="bi bi-box-seam"></i> Yeni Stok
                     </a>
-                    <a href="{% url 'kasa_hareket' %}" class="btn btn-outline-warning">
+                    <a href="{% url 'kasa_hareket' %}" class="btn btn-outline-warning mb-2 me-2">
                         <i class="bi bi-cash"></i> Kasa Hareketi
                     </a>
-                    <a href="{% url 'fatura_ekle' %}" class="btn btn-outline-info">
+                    <a href="{% url 'fatura_ekle' %}" class="btn btn-outline-info mb-2">
                         <i class="bi bi-receipt-cutoff"></i> Yeni Fatura
                     </a>
                 </div>

@@ -1,0 +1,295 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Genel Stok Seçenekleri{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>Genel Stok Seçenekleri</h4>
+                    <button class="btn btn-primary" onclick="yeniSecenek()">
+                        <i class="bi bi-plus"></i> Yeni Seçenek
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if secenekler %}
+                    <div class="accordion" id="secenekAccordion">
+                        {% for secenek in secenekler %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header d-flex align-items-center">
+                                <button class="accordion-button collapsed flex-grow-1" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#collapse{{ secenek.id }}">
+                                    {{ secenek.baslik }}
+                                    <span class="badge bg-secondary ms-2">{{ secenek.degerler.count }} değer</span>
+                                </button>
+                                <button class="btn btn-sm btn-danger ms-2" onclick="secenekSil({{ secenek.id }})"
+                                    title="Seçeneği Sil">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ secenek.id }}" class="accordion-collapse collapse"
+                                data-bs-parent="#secenekAccordion">
+                                <div class="accordion-body">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Değer</th>
+                                                <th>Fiyat Tipi</th>
+                                                <th>Fiyat Değeri</th>
+                                                <th>Varsayılan</th>
+                                                <th>İşlemler</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for deger in secenek.degerler.all %}
+                                            {% if not deger.silindi %}
+                                            <tr>
+                                                <td>{{ deger.deger }}</td>
+                                                <td>{{ deger.get_fiyat_tipi_display }}</td>
+                                                <td>
+                                                    {% if deger.fiyat_tipi == 'yuzde' %}%{% endif %}
+                                                    {{ deger.fiyat_degeri }}
+                                                </td>
+                                                <td>
+                                                    {% if deger.varsayilan %}
+                                                    <span class="badge bg-primary">Evet</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-warning"
+                                                        onclick='degerDuzenle({{ deger.id }}, "{{ deger.deger }}", "{{ deger.fiyat_tipi }}", "{{ deger.fiyat_degeri }}", {{ deger.varsayilan|lower }})'>
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger"
+                                                        onclick="degerSil({{ deger.id }})">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <button class="btn btn-sm btn-primary" onclick="degerEkle({{ secenek.id }})">
+                                        <i class="bi bi-plus"></i> Değer Ekle
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Henüz genel stok seçeneği tanımlanmamış.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yeni Seçenek Modal -->
+<div class="modal fade" id="yeniSecenekModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Genel Seçenek</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Seçenek Başlığı</label>
+                    <input type="text" class="form-control" id="secenekBaslik"
+                        placeholder="Örn: Kağıt Türü, Baskı Seçenekleri">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="secenekKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Değer Ekleme/Düzenleme Modal -->
+<div class="modal fade" id="degerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Değer Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="secenekId">
+                <input type="hidden" id="degerId">
+                <div class="mb-3">
+                    <label class="form-label">Değer</label>
+                    <input type="text" class="form-control" id="degerAdi" placeholder="Örn: Mat, Parlak">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fiyat Tipi</label>
+                    <select class="form-control" id="fiyatTipi">
+                        <option value="sabit">Sabit Tutar</option>
+                        <option value="yuzde">Yüzde</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fiyat Değeri</label>
+                    <input type="number" class="form-control" id="fiyatDegeri" step="0.01">
+                    <small class="text-muted">Pozitif: ekle, Negatif: düş</small>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="varsayilan">
+                        <label class="form-check-label" for="varsayilan">
+                            Varsayılan değer
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="degerKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Yeni seçenek
+    function yeniSecenek() {
+        $('#yeniSecenekModal').modal('show');
+    }
+
+
+    // Seçenek silme
+    function secenekSil(secenekId) {
+        if (confirm('Bu seçeneği ve tüm değerlerini silmek istediğinize emin misiniz?')) {
+            $.ajax({
+                url: '/yetkili/genel-stok-secenek/' + secenekId + '/sil/',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Hata: ' + response.error);
+                    }
+                }
+            });
+        }
+    }
+
+
+
+    function secenekKaydet() {
+        var baslik = $('#secenekBaslik').val();
+
+        if (!baslik) {
+            alert('Lütfen seçenek başlığını girin!');
+            return;
+        }
+
+        $.ajax({
+            url: '{% url "genel_stok_secenek_ekle" %}',
+            type: 'POST',
+            data: {
+                'baslik': baslik,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function (response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('Hata: ' + response.error);
+                }
+            }
+        });
+    }
+
+    // Değer ekleme
+    function degerEkle(secenekId) {
+        $('#secenekId').val(secenekId);
+        $('#degerId').val('');
+        $('#degerModal .modal-title').text('Değer Ekle');
+        $('#degerAdi').val('');
+        $('#fiyatTipi').val('sabit');
+        $('#fiyatDegeri').val('');
+        $('#varsayilan').prop('checked', false);
+        $('#degerModal').modal('show');
+    }
+
+    // Değer düzenleme
+    function degerDuzenle(degerId, deger, fiyatTipi, fiyatDegeri, varsayilan) {
+        $('#degerId').val(degerId);
+        $('#degerModal .modal-title').text('Değer Düzenle');
+        $('#degerAdi').val(deger);
+        $('#fiyatTipi').val(fiyatTipi);
+        $('#fiyatDegeri').val(fiyatDegeri.replace(',', '.'));
+        $('#varsayilan').prop('checked', varsayilan);
+        $('#degerModal').modal('show');
+    }
+
+    // Değer kaydetme
+    function degerKaydet() {
+        var secenekId = $('#secenekId').val();
+        var degerId = $('#degerId').val();
+        var deger = $('#degerAdi').val();
+        var fiyatTipi = $('#fiyatTipi').val();
+        var fiyatDegeri = $('#fiyatDegeri').val();
+        var varsayilan = $('#varsayilan').is(':checked');
+
+        if (!deger || !fiyatDegeri) {
+            alert('Lütfen tüm alanları doldurun!');
+            return;
+        }
+
+        var url = degerId ? '/yetkili/genel-stok-secenek/deger/' + degerId + '/duzenle/' : '{% url "genel_stok_secenek_deger_ekle" %}';
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                'secenek_id': secenekId,
+                'deger': deger,
+                'fiyat_tipi': fiyatTipi,
+                'fiyat_degeri': fiyatDegeri,
+                'varsayilan': varsayilan,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function (response) {
+                if (response.success) {
+                    $('#degerModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Hata: ' + response.error);
+                }
+            }
+        });
+    }
+
+    // Değer silme
+    function degerSil(degerId) {
+        if (confirm('Bu değeri silmek istediğinize emin misiniz?')) {
+            $.ajax({
+                url: '/yetkili/genel-stok-secenek/deger/' + degerId + '/sil/',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        location.reload();
+                    }
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

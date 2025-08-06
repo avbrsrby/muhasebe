@@ -1,0 +1,141 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ stok.ad }} - Detay{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3>{{ stok.ad }}</h3>
+                    <span class="badge bg-primary">{{ stok.kod }}</span>
+                </div>
+                <div class="card-body">
+                    <!-- Temel Bilgiler -->
+                    <h5 class="text-primary mb-3">Temel Bilgiler</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Barkod:</strong> {{ stok.barkod|default:"-" }}</p>
+                            <p><strong>Birim:</strong> {{ stok.get_birim_display }}</p>
+                            <p><strong>Mevcut Miktar:</strong> 
+                                {% if stok.miktar <= stok.kritik_stok %}
+                                    <span class="text-danger">{{ stok.miktar|floatformat:2 }}</span>
+                                    <i class="bi bi-exclamation-triangle text-danger" title="Kritik stok!"></i>
+                                {% else %}
+                                    {{ stok.miktar|floatformat:2 }}
+                                {% endif %}
+                            </p>
+                            <p><strong>Kritik Stok Seviyesi:</strong> {{ stok.kritik_stok|floatformat:2 }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Para Birimi:</strong> {{ stok.para_birimi.ad }} ({{ stok.para_birimi.kod }})</p>
+                            <p><strong>Alış Fiyatı:</strong> {{ stok.alis_fiyati|floatformat:2 }} {{ stok.para_birimi.sembol }}</p>
+                            <p><strong>Satış Fiyatı:</strong> {{ stok.satis_fiyati|floatformat:2 }} {{ stok.para_birimi.sembol }}</p>
+                            <p><strong>KDV Oranı:</strong> %{{ stok.kdv_orani }}</p>
+                            <p><strong>Durum:</strong> 
+                                {% if stok.aktif %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Pasif</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Grup Fiyatları -->
+                    {% if grup_fiyatlari %}
+                    <h5 class="text-primary mb-3">Müşteri Grubuna Özel Fiyatlar</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Müşteri Grubu</th>
+                                    <th>Özel Satış Fiyatı</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gf in grup_fiyatlari %}
+                                <tr>
+                                    <td>{{ gf.cari_grup.ad }}</td>
+                                    <td>{{ gf.satis_fiyati|floatformat:2 }} {{ stok.para_birimi.sembol }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Seçenekler -->
+                    {% if secenekler %}
+                    <h5 class="text-primary mb-3">Stok Seçenekleri</h5>
+                    {% for secenek in secenekler %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">{{ secenek.baslik }}</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Değer</th>
+                                        <th>Fiyat Etkisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for deger in secenek.degerler.all %}
+                                    {% if not deger.silindi %}
+                                    <tr>
+                                        <td>{{ deger.deger }}</td>
+                                        <td>
+                                            {% if deger.fiyat_degeri > 0 %}+{% endif %}
+                                            {% if deger.fiyat_tipi == 'yuzde' %}%{% endif %}
+                                            {{ deger.fiyat_degeri|floatformat:2 }}
+                                            {% if deger.fiyat_tipi == 'sabit' %}{{ stok.para_birimi.sembol }}{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Sistem Bilgileri -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <small class="text-muted">
+                                Oluşturma: {{ stok.olusturma_tarihi|date:"d.m.Y H:i" }} | 
+                                Son Güncelleme: {{ stok.guncelleme_tarihi|date:"d.m.Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'stok_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Geri
+                            </a>
+                            <a href="{% url 'stok_duzenle' stok.pk %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Düzenle
+                            </a>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger" onclick="if(confirm('Bu stok kartını silmek istediğinize emin misiniz?')) document.getElementById('deleteForm').submit();">
+                                <i class="bi bi-trash"></i> Sil
+                            </button>
+                            <form id="deleteForm" method="post" action="{% url 'stok_sil' stok.pk %}" style="display: none;">
+                                {% csrf_token %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

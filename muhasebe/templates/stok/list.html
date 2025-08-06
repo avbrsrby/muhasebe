@@ -1,0 +1,282 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Stok Kartları{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1>Stok Yönetimi</h1>
+    
+    <!-- Filtre Paneli -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtreler</h5>
+                <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterPanel">
+                    <i class="bi bi-chevron-down"></i> Göster/Gizle
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filterPanel">
+            <div class="card-body">
+                <form method="get" id="filterForm">
+                    <div class="row">
+                        <!-- Genel Arama -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Arama (Kod, Ad, Barkod)</label>
+                            <input type="text" class="form-control" name="arama" 
+                                   value="{{ filters.arama }}" placeholder="Ara...">
+                        </div>
+                        
+                        <!-- Stok Grubu -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stok Grubu</label>
+                            <select class="form-control" name="grup">
+                                <option value="">Tümü</option>
+                                {% for grup in stok_gruplari %}
+                                    <option value="{{ grup.id }}" {% if filters.grup == grup.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ grup.ad }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Para Birimi -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Para Birimi</label>
+                            <select class="form-control" name="para_birimi">
+                                <option value="">Tümü</option>
+                                {% for pb in para_birimleri %}
+                                    <option value="{{ pb.id }}" {% if filters.para_birimi == pb.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ pb.kod }} - {{ pb.ad }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Satış Fiyatı Aralığı -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Min. Satış Fiyatı</label>
+                            <input type="number" class="form-control" name="satis_fiyati_min" 
+                                   placeholder="0.00" step="0.01"
+                                   value="{{ filters.satis_fiyati_min|default:'' }}">
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Max. Satış Fiyatı</label>
+                            <input type="number" class="form-control" name="satis_fiyati_max" 
+                                   placeholder="0.00" step="0.01"
+                                   value="{{ filters.satis_fiyati_max|default:'' }}">
+                        </div>
+                        
+                        <!-- Durum -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Durum</label>
+                            <select class="form-control" name="durum">
+                                <option value="">Tümü</option>
+                                <option value="aktif" {% if filters.durum == 'aktif' %}selected{% endif %}>Aktif</option>
+                                <option value="pasif" {% if filters.durum == 'pasif' %}selected{% endif %}>Pasif</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Kritik Stok -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Stok Durumu</label>
+                            <select class="form-control" name="kritik_stok">
+                                <option value="">Tümü</option>
+                                <option value="kritik" {% if filters.kritik_stok == 'kritik' %}selected{% endif %}>Kritik Stok</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Sıralama -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Sıralama</label>
+                            <select class="form-control" name="siralama">
+                                <option value="kod" {% if filters.siralama == 'kod' %}selected{% endif %}>Stok Kodu</option>
+                                <option value="ad" {% if filters.siralama == 'ad' %}selected{% endif %}>Stok Adı</option>
+                                <option value="fiyat_artan" {% if filters.siralama == 'fiyat_artan' %}selected{% endif %}>Fiyat (Düşükten Yükseğe)</option>
+                                <option value="fiyat_azalan" {% if filters.siralama == 'fiyat_azalan' %}selected{% endif %}>Fiyat (Yüksekten Düşüğe)</option>
+                                <option value="stok_artan" {% if filters.siralama == 'stok_artan' %}selected{% endif %}>Stok (Azdan Çoğa)</option>
+                                <option value="stok_azalan" {% if filters.siralama == 'stok_azalan' %}selected{% endif %}>Stok (Çoktan Aza)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Butonlar -->
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Filtrele
+                                </button>
+                                <a href="{% url 'stok_list' %}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Temizle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Özet Bilgiler -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6>Toplam Stok</h6>
+                    <h4>{{ stoklar.count }} Adet</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Toplam Değer</h6>
+                    <h4>{{ toplam_deger|floatformat:2 }} ₺</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6>Kritik Stok</h6>
+                    <h4>{{ kritik_stok_sayisi }} Adet</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stok Listesi -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Stok Listesi ({{ stoklar.count }} kayıt)</h5>
+            <a href="{% url 'stok_ekle' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Yeni Stok Ekle
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kod</th>
+                            <th>Stok Adı</th>
+                            <th>Grup</th>
+                            <th>Barkod</th>
+                            <th>Miktar</th>
+                            <th>Birim</th>
+                            <th>Para Birimi</th>
+                            <th>Alış Fiyatı</th>
+                            <th>Satış Fiyatı</th>
+                            <th>KDV %</th>
+                            <th>Durum</th>
+                            <th width="120">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stok in stoklar %}
+                        <tr>
+                            <td><strong>{{ stok.kod }}</strong></td>
+                            <td>{{ stok.ad }}</td>
+                            <td>
+                                {% if stok.grup %}
+                                    <span class="badge bg-secondary">{{ stok.grup.ad }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ stok.barkod|default:"-" }}</td>
+                            <td>
+                                {% if stok.miktar <= stok.kritik_stok %}
+                                    <span class="text-danger">{{ stok.miktar|floatformat:2 }}</span>
+                                    <i class="bi bi-exclamation-triangle text-danger" title="Kritik stok!"></i>
+                                {% else %}
+                                    {{ stok.miktar|floatformat:2 }}
+                                {% endif %}
+                            </td>
+                            <td>{{ stok.get_birim_display }}</td>
+                            <td>{{ stok.para_birimi.kod }}</td>
+                            <td>{{ stok.alis_fiyati|floatformat:2 }} {{ stok.para_birimi.sembol }}</td>
+                            <td>{{ stok.satis_fiyati|floatformat:2 }} {{ stok.para_birimi.sembol }}</td>
+                            <td>{{ stok.kdv_orani }}%</td>
+                            <td>
+                                {% if stok.aktif %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'stok_duzenle' stok.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="12" class="text-center">
+                                {% if filters %}
+                                    Filtrelere uygun kayıt bulunamadı.
+                                {% else %}
+                                    Henüz stok kartı bulunmamaktadır.
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Otomatik filtreleme için
+    var timeout;
+    
+    // Select elemanları değiştiğinde otomatik submit
+    $('#filterForm select').on('change', function() {
+        $('#filterForm').submit();
+    });
+    
+    // Text inputlar için debounce
+    $('#filterForm input[type="text"]').on('keyup', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+            $('#filterForm').submit();
+        }, 500);
+    });
+    
+    // Number inputlar için
+    $('#filterForm input[type="number"]').on('keyup', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+            $('#filterForm').submit();
+        }, 500);
+    });
+    
+    // F6 ile stok seçildiğinde otomatik filtreleme
+    $(document).on('input change', '[name="arama"]', function() {
+        if ($(this).data('from-modal')) {
+            $('#filterForm').submit();
+            $(this).data('from-modal', false);
+        }
+    });
+    
+    // Global stok modal kapatıldığında kontrol et
+    $('#globalStokSearchModal').on('hide.bs.modal', function() {
+        if ($('[name="arama"]').val()) {
+            $('[name="arama"]').data('from-modal', true).trigger('change');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -55,3 +55,20 @@
 .dashboard-card:hover {
     transform: translateY(-5px);
 }
+
+/* Döviz kurları için stil */
+.navbar-text .badge {
+    font-size: 0.9rem;
+    padding: 0.4em 0.6em;
+    min-width: 60px;
+}
+
+.navbar-text i {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .navbar-text .text-white-50 {
+        display: none;
+    }
+}

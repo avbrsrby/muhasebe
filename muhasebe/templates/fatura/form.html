@@ -1,0 +1,656 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kalem-row {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+    }
+
+    .kalem-row:hover {
+        background: #e9ecef;
+    }
+
+    .secenek-container {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+
+    .indirim-bilgi {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .eski-fiyat {
+        text-decoration: line-through;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="faturaForm">
+                        {% csrf_token %}
+
+                        <!-- Üst Bilgiler -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label">Tarih ve Saat <span class="text-danger">*</span></label>
+                                {{ form.tarih }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fatura Tipi <span class="text-danger">*</span></label>
+                                {{ form.tip }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Cari <span class="text-danger">*</span>
+                                    <small class="text-muted">(F5 ile hızlı arama)</small>
+                                </label>
+                                {{ form.cari }}
+                            </div>
+                        </div>
+
+                        <!-- Kalem Ekleme Bölümü -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Fatura Kalemleri</h5>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="yeniKalemEkle()">
+                                        <i class="bi bi-plus"></i> Kalem Ekle (F6)
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="kalemlerContainer">
+                                    <!-- Kalemler buraya gelecek -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alt Bilgiler -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label">Açıklama</label>
+                                    {{ form.aciklama }}
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Vade Tarihi</label>
+                                        {{ form.vade_tarihi }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <!-- Toplam Bilgileri -->
+                                <div class="card">
+                                    <div class="card-body">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td>Ara Toplam:</td>
+                                                <td class="text-end"><strong id="araToplam">0.00</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    İskonto:
+                                                    <div class="input-group input-group-sm mt-1">
+                                                        <select id="iskontoTipi" name="iskonto_tipi"
+                                                            class="form-select form-select-sm">
+                                                            <option value="">Yok</option>
+                                                            <option value="yuzde">%</option>
+                                                            <option value="tutar">Tutar</option>
+                                                        </select>
+                                                        <input type="number" id="iskontoDegeri" name="iskonto_degeri"
+                                                            class="form-control form-control-sm" step="0.01" value="0">
+                                                    </div>
+                                                </td>
+                                                <td class="text-end text-danger">-<strong
+                                                        id="iskontoTutari">0.00</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td>KDV Toplam:</td>
+                                                <td class="text-end"><strong id="kdvToplam">0.00</strong></td>
+                                            </tr>
+                                            <tr class="table-active">
+                                                <td><strong>GENEL TOPLAM:</strong></td>
+                                                <td class="text-end"><strong id="genelToplam"
+                                                        class="text-primary fs-5">0.00</strong></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden input for kalemler JSON -->
+                        <input type="hidden" id="kalemlerJson" name="kalemler">
+
+                        <!-- Butonlar -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <div>
+                                <a href="{% url 'fatura_list' %}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left"></i> Geri
+                                </a>
+                                {% if fatura %}
+                                <a href="{% url 'fatura_sil' fatura.pk %}" class="btn btn-danger ms-2"
+                                    onclick="return confirm('{{ fatura.fatura_no }} numaralı faturayı silmek istediğinize emin misiniz?');">
+                                    <i class="bi bi-trash"></i> Faturayı Sil
+                                </a>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Faturayı Kaydet
+                            </button>
+                        </div>
+
+
+                        <!-- Silme Onay Modal -->
+                        {% if fatura %}
+                        <div class="modal fade" id="silmeModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Fatura Sil</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><strong>{{ fatura.fatura_no }}</strong> numaralı faturayı silmek istediğinize
+                                            emin misiniz?</p>
+                                        <p class="text-danger">Bu işlem geri alınabilir (soft delete).</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">İptal</button>
+                                        <form method="post" action="{% url 'fatura_sil' fatura.pk %}"
+                                            style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Evet, Sil</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stok Seçenek Modal -->
+<div class="modal fade" id="stokSecenekModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stok Seçenekleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="secenekModalBody">
+                <!-- Seçenekler buraya gelecek -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="secenekleriUygula()">Uygula</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+
+    var kalemSayac = 0;
+    var kalemler = {};
+    var aktifKalemId = null;
+
+    // Yeni kalem ekleme
+    function yeniKalemEkle() {
+        // Global stok arama modalını aç
+        var modalElement = document.getElementById('globalStokSearchModal');
+        var modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+        modal.show();
+
+        // Input'u temizle ve focus yap
+        setTimeout(function () {
+            $('#globalStokSearchInput').val('').focus();
+            $('#globalStokSearchResults').html('');
+        }, 100);
+
+        // Stok seçildiğinde
+        $(document).off('click', '.stok-select-item').on('click', '.stok-select-item', function (e) {
+            e.preventDefault();
+
+            var stok = {
+                id: $(this).data('id'),
+                kod: $(this).data('kod'),
+                ad: $(this).data('ad'),
+                birim: $(this).data('birim'),
+                satis_fiyati: $(this).data('satis-fiyati'),
+                para_birimi: $(this).data('para-birimi')
+            };
+
+            // Stok detaylarını al
+            $.ajax({
+                url: '/fatura/stok-detay/' + stok.id + '/',
+                data: {
+                    cari_id: $('#id_cari').val()
+                },
+                success: function (data) {
+                    kalemEkle(data);
+
+                    // Modal'ı kapat
+                    modal.hide();
+
+                    // Backdrop'ı manuel olarak temizle
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('overflow', '');
+                    $('body').css('padding-right', '');
+                }
+            });
+        });
+    }
+
+    // Kalem ekleme
+    function kalemEkle(stokData) {
+        kalemSayac++;
+        var kalemId = 'kalem_' + kalemSayac;
+
+        // İndirim bilgisi HTML'i
+        var indirimHtml = '';
+        if (stokData.indirim_bilgisi) {
+            indirimHtml = `
+            <div class="indirim-bilgi">
+                <i class="bi bi-tag-fill text-success"></i>
+                <strong>${stokData.indirim_bilgisi.aciklama}</strong><br>
+                <span class="eski-fiyat">${stokData.indirim_bilgisi.eski_fiyat} ${stokData.para_birimi.sembol}</span>
+                → <span class="text-success">${stokData.indirim_bilgisi.yeni_fiyat} ${stokData.para_birimi.sembol}</span>
+                <span class="badge bg-success">%${stokData.indirim_bilgisi.indirim_orani} İndirim</span>
+            </div>
+        `;
+        }
+
+        // Seçenekler HTML'i
+        var seceneklerHtml = '';
+        if (stokData.secenekler && stokData.secenekler.length > 0) {
+            seceneklerHtml = '<div class="secenek-container">';
+            seceneklerHtml += '<strong>Seçenekler:</strong> ';
+            seceneklerHtml += '<button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="secenekleriDuzenle(\'' + kalemId + '\')">';
+            seceneklerHtml += '<i class="bi bi-gear"></i> Düzenle</button>';
+            seceneklerHtml += '<div id="' + kalemId + '_secenekler" class="mt-2"></div>';
+            seceneklerHtml += '</div>';
+        }
+
+        var html = `
+        <div class="kalem-row" id="${kalemId}">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>${stokData.kod} - ${stokData.ad}</strong>
+                    <br><small class="text-muted">Stok: ${stokData.miktar} ${stokData.birim}</small>
+                    ${indirimHtml}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Miktar</label>
+                    <input type="number" class="form-control kalem-miktar" 
+                           data-kalem-id="${kalemId}" value="1" min="1" step="1">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Birim Fiyat</label>
+                    <input type="number" class="form-control kalem-fiyat" 
+                           data-kalem-id="${kalemId}" value="${stokData.satis_fiyati}" 
+                           min="0" step="0.01">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">KDV %</label>
+                    <input type="number" class="form-control kalem-kdv" 
+                           data-kalem-id="${kalemId}" value="${stokData.kdv_orani}" 
+                           min="0" max="100">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">KDV</label>
+                    <select class="form-control kalem-kdv-durum" data-kalem-id="${kalemId}">
+                        <option value="dahil" selected>Dahil</option>
+                        <option value="haric">Hariç</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tutar</label>
+                    <div class="form-control-plaintext">
+                        <strong id="${kalemId}_tutar">0.00</strong>
+                        <small class="text-muted d-block" id="${kalemId}_kdv_bilgi"></small>
+                    </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="kalemSil('${kalemId}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${seceneklerHtml}
+        </div>
+    `;
+
+        $('#kalemlerContainer').append(html);
+
+        // Kalem verilerini sakla
+        kalemler[kalemId] = {
+            stok_id: stokData.id,
+            stok_data: stokData,
+            miktar: 1,
+            birim_fiyat: parseFloat(stokData.satis_fiyati),
+            kdv_orani: stokData.kdv_orani,
+            kdv_durumu: 'dahil',
+            secenekler: {},
+            secenek_fiyat_farki: 0
+        };
+
+        // Varsayılan seçenekleri uygula
+        if (stokData.secenekler && stokData.secenekler.length > 0) {
+            var varsayilanSecenekler = {};
+            stokData.secenekler.forEach(function (secenek) {
+                secenek.degerler.forEach(function (deger) {
+                    if (deger.varsayilan) {
+                        varsayilanSecenekler[secenek.id] = deger.id;
+                    }
+                });
+            });
+            kalemler[kalemId].secenekler = varsayilanSecenekler;
+            secenekGosteriminiGuncelle(kalemId);
+        }
+
+        hesapla();
+    }
+
+    // Seçenekleri düzenleme
+    function secenekleriDuzenle(kalemId) {
+        aktifKalemId = kalemId;
+        var kalem = kalemler[kalemId];
+        var html = '';
+
+        kalem.stok_data.secenekler.forEach(function (secenek) {
+            html += '<div class="mb-3">';
+            html += '<label class="form-label">' + secenek.baslik + '</label>';
+            html += '<select class="form-select secenek-select" data-secenek-id="' + secenek.id + '">';
+
+            secenek.degerler.forEach(function (deger) {
+                var selected = kalem.secenekler[secenek.id] == deger.id ? 'selected' : '';
+                var fiyatBilgi = '';
+
+                if (deger.fiyat_tipi == 'yuzde' && deger.fiyat_degeri != 0) {
+                    fiyatBilgi = ' (%' + deger.fiyat_degeri + ')';
+                } else if (deger.fiyat_tipi == 'sabit' && deger.fiyat_degeri != 0) {
+                    fiyatBilgi = ' (' + (deger.fiyat_degeri > 0 ? '+' : '') + deger.fiyat_degeri + ' TL)';
+                }
+
+                html += '<option value="' + deger.id + '" ' + selected + '>' + deger.deger + fiyatBilgi + '</option>';
+            });
+
+            html += '</select>';
+            html += '</div>';
+        });
+
+        $('#secenekModalBody').html(html);
+        $('#stokSecenekModal').modal('show');
+    }
+
+    // Seçenekleri uygulama
+    function secenekleriUygula() {
+        if (!aktifKalemId) return;
+
+        var kalem = kalemler[aktifKalemId];
+        var toplamFark = 0;
+
+        // Seçenekleri kaydet ve fiyat farkını hesapla
+        $('.secenek-select').each(function () {
+            var secenekId = $(this).data('secenek-id');
+            var degerId = $(this).val();
+
+            kalem.secenekler[secenekId] = degerId;
+
+            // Fiyat farkını hesapla
+            kalem.stok_data.secenekler.forEach(function (secenek) {
+                if (secenek.id == secenekId) {
+                    secenek.degerler.forEach(function (deger) {
+                        if (deger.id == degerId) {
+                            if (deger.fiyat_tipi == 'yuzde') {
+                                toplamFark += kalem.birim_fiyat * parseFloat(deger.fiyat_degeri) / 100;
+                            } else {
+                                toplamFark += parseFloat(deger.fiyat_degeri);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        kalem.secenek_fiyat_farki = toplamFark;
+
+        // Gösterimi güncelle
+        secenekGosteriminiGuncelle(aktifKalemId);
+
+        $('#stokSecenekModal').modal('hide');
+        hesapla();
+    }
+
+    // Seçenek gösterimini güncelleme
+    function secenekGosteriminiGuncelle(kalemId) {
+        var kalem = kalemler[kalemId];
+        var html = '<small class="text-muted">';
+
+        kalem.stok_data.secenekler.forEach(function (secenek) {
+            var seciliDeger = null;
+            secenek.degerler.forEach(function (deger) {
+                if (deger.id == kalem.secenekler[secenek.id]) {
+                    seciliDeger = deger;
+                }
+            });
+
+            if (seciliDeger) {
+                html += '<span class="badge bg-secondary me-1">' + secenek.baslik + ': ' + seciliDeger.deger + '</span>';
+            }
+        });
+
+        html += '</small>';
+        $('#' + kalemId + '_secenekler').html(html);
+    }
+
+    // Kalem silme
+    function kalemSil(kalemId) {
+        if (confirm('Bu kalemi silmek istediğinize emin misiniz?')) {
+            $('#' + kalemId).remove();
+            delete kalemler[kalemId];
+            hesapla();
+        }
+    }
+
+    // Hesaplama
+    function hesapla() {
+        var araToplam = 0;
+        var kdvToplam = 0;
+
+        Object.keys(kalemler).forEach(function (kalemId) {
+            var kalem = kalemler[kalemId];
+            var miktar = parseFloat($('#' + kalemId + ' .kalem-miktar').val()) || 0;
+            var fiyat = parseFloat($('#' + kalemId + ' .kalem-fiyat').val()) || 0;
+            var kdvOrani = parseFloat($('#' + kalemId + ' .kalem-kdv').val()) || 0;
+            var kdvDurumu = $('#' + kalemId + ' .kalem-kdv-durum').val() || 'dahil';
+
+            kalem.miktar = miktar;
+            kalem.birim_fiyat = fiyat;
+            kalem.kdv_orani = kdvOrani;
+            kalem.kdv_durumu = kdvDurumu;
+
+            var tutar = miktar * (fiyat + kalem.secenek_fiyat_farki);
+            var kdvTutari = 0;
+            var netTutar = 0;
+            var toplamTutar = 0;
+
+            if (kdvDurumu === 'dahil') {
+                // KDV dahil - fiyat KDV dahil, KDV'yi içeriden hesapla
+                toplamTutar = tutar;
+                kdvTutari = (tutar * kdvOrani) / (100 + kdvOrani);
+                netTutar = tutar - kdvTutari;
+
+                $('#' + kalemId + '_kdv_bilgi').text('(KDV: ' + kdvTutari.toFixed(2) + ')');
+            } else {
+                // KDV hariç - fiyat KDV hariç, KDV'yi üzerine ekle
+                netTutar = tutar;
+                kdvTutari = tutar * kdvOrani / 100;
+                toplamTutar = tutar + kdvTutari;
+
+                $('#' + kalemId + '_kdv_bilgi').text('(+KDV: ' + kdvTutari.toFixed(2) + ')');
+            }
+
+            $('#' + kalemId + '_tutar').text(toplamTutar.toFixed(2));
+
+            araToplam += netTutar;
+            kdvToplam += kdvTutari;
+        });
+
+        // İskonto hesapla
+        var iskontoTipi = $('#iskontoTipi').val();
+        var iskontoDegeri = parseFloat($('#iskontoDegeri').val()) || 0;
+        var iskontoTutari = 0;
+
+        if (iskontoTipi == 'yuzde') {
+            iskontoTutari = araToplam * iskontoDegeri / 100;
+        } else if (iskontoTipi == 'tutar') {
+            iskontoTutari = iskontoDegeri;
+        }
+
+        var genelToplam = araToplam - iskontoTutari + kdvToplam;
+
+        $('#araToplam').text(araToplam.toFixed(2));
+        $('#iskontoTutari').text(iskontoTutari.toFixed(2));
+        $('#kdvToplam').text(kdvToplam.toFixed(2));
+        $('#genelToplam').text(genelToplam.toFixed(2));
+    }
+
+    // Input değişikliklerini dinle
+    $(document).on('input change', '.kalem-miktar, .kalem-fiyat, .kalem-kdv, .kalem-kdv-durum', function () {
+        hesapla();
+    });
+
+    $('#iskontoTipi, #iskontoDegeri').on('input change', function () {
+        hesapla();
+    });
+
+    // F6 tuşu ile stok ekleme
+    $(document).keydown(function (e) {
+        if (e.key === 'F6' || e.keyCode === 117) {
+            e.preventDefault();
+            yeniKalemEkle();
+            return false;
+        }
+    });
+
+    // Form submit
+    $('#faturaForm').submit(function (e) {
+        var kalemlerArray = [];
+        Object.keys(kalemler).forEach(function (kalemId) {
+            var kalem = kalemler[kalemId];
+            kalem.kdv_durumu = $('#' + kalemId + ' .kalem-kdv-durum').val();
+            kalemlerArray.push(kalem);
+        });
+
+        if (kalemlerArray.length === 0) {
+            alert('En az bir kalem eklemelisiniz!');
+            e.preventDefault();
+            return false;
+        }
+
+        $('#kalemlerJson').val(JSON.stringify(kalemlerArray));
+    });
+
+
+
+    // Sayfa yüklendiğinde mevcut kalemleri yükle (düzenleme modu için)
+    $(document).ready(function () {
+        {% if fatura %}
+        // İskonto bilgilerini yükle
+        {% if fatura.iskonto_tipi %}
+        $('#iskontoTipi').val('{{ fatura.iskonto_tipi }}');
+        $('#iskontoDegeri').val('{{ fatura.iskonto_degeri }}');
+        {% endif %}
+
+        // Düzenleme modunda mevcut kalemleri yükle
+        {% for kalem in fatura.kalemler.all %}
+        {% if not kalem.silindi %}
+        // Her kalem için IIFE kullan
+        (function () {
+            var mevcutMiktar = '{{ kalem.miktar }}'.replace(',', '.');
+            var mevcutFiyat = '{{ kalem.birim_fiyat }}'.replace(',', '.');
+            var mevcutKdvOrani = '{{ kalem.kdv_orani }}';
+            var mevcutKdvDurumu = '{{ kalem.kdv_durumu }}';
+
+            // Stok detaylarını al
+            $.ajax({
+                url: '/fatura/stok-detay/{{ kalem.stok.id }}/',
+                data: {
+                    cari_id: $('#id_cari').val()
+                },
+                success: function (stokData) {
+                    // kalemEkle fonksiyonunu çağır
+                    kalemEkle(stokData);
+
+                    // Son eklenen kalemi bul (kalemSayac en son artırıldı)
+                    var kalemId = 'kalem_' + kalemSayac;
+
+                    // Mevcut değerleri set et
+                    $('#' + kalemId + ' .kalem-miktar').val(mevcutMiktar);
+                    $('#' + kalemId + ' .kalem-fiyat').val(mevcutFiyat);
+                    $('#' + kalemId + ' .kalem-kdv').val(mevcutKdvOrani);
+                    $('#' + kalemId + ' .kalem-kdv-durum').val(mevcutKdvDurumu);
+
+                    // Kalem verilerini güncelle
+                    kalemler[kalemId].miktar = parseFloat(mevcutMiktar);
+                    kalemler[kalemId].birim_fiyat = parseFloat(mevcutFiyat);
+                    kalemler[kalemId].kdv_orani = parseFloat(mevcutKdvOrani);
+                    kalemler[kalemId].kdv_durumu = mevcutKdvDurumu;
+
+                    // Seçenekleri ayarla (varsa)
+                    {% if kalem.secenekler %}
+                    kalemler[kalemId].secenekler = {{ kalem.secenekler | safe }
+                };
+                secenekGosteriminiGuncelle(kalemId);
+                {% endif %}
+
+                // Hesaplamayı tetikle
+                hesapla();
+    }
+        });
+    }) ();
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+});
+
+
+
+</script>
+{% endblock %}

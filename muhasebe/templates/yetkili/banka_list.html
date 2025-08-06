@@ -45,10 +45,8 @@
                             <td>{{ banka.hesap_no }}</td>
                             <td><small>{{ banka.iban }}</small></td>
                             <td>{{ banka.para_birimi.kod }}</td>
-                            <td class="text-end">
-                                <span class="{% if banka.bakiye < 0 %}text-danger{% elif banka.bakiye > 0 %}text-success{% endif %}">
-                                    {{ banka.bakiye|floatformat:2 }} {{ banka.para_birimi.sembol }}
-                                </span>
+                            <td class="text-end {% if banka.bakiye < 0 %}text-danger{% elif banka.bakiye > 0 %}text-success{% endif %}">
+                                <strong>{{ banka.bakiye|floatformat:2 }} {{ banka.para_birimi.kod }}</strong>
                             </td>
                             <td>
                                 {% if banka.aktif %}

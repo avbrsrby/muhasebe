@@ -75,6 +75,41 @@
                     </div>
                 </div>
 
+                <!-- Bakiye Detayları -->
+                <h5 class="text-primary mb-3">Bakiye Detayları</h5>
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Para Birimi</th>
+                                        <th class="text-end">Toplam Giriş</th>
+                                        <th class="text-end">Toplam Çıkış</th>
+                                        <th class="text-end">Bakiye</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bakiye in cari.get_bakiye_detay %}
+                                    <tr>
+                                        <td><strong>{{ bakiye.para_birimi__kod }} - {{ bakiye.para_birimi__ad }}</strong></td>
+                                        <td class="text-end">{{ bakiye.toplam_giris|default:0|floatformat:2 }}</td>
+                                        <td class="text-end">{{ bakiye.toplam_cikis|default:0|floatformat:2 }}</td>
+                                        <td class="text-end {% if bakiye.bakiye > 0 %}text-success{% elif bakiye.bakiye < 0 %}text-danger{% endif %}">
+                                            <strong>{{ bakiye.bakiye|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Henüz hareket bulunmamaktadır.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Sistem Bilgileri -->
                 <div class="row">
                     <div class="col-md-12">

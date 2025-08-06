@@ -34,9 +34,13 @@ urlpatterns = [
     path('kasa/', views.kasa_list, name='kasa_list'),
     path('kasa/hareket/', views.kasa_hareket, name='kasa_hareket'),
     
-    # Fatura işlemler
+    # Fatura işlemleri
     path('fatura/', views.fatura_list, name='fatura_list'),
     path('fatura/ekle/', views.fatura_ekle, name='fatura_ekle'),
+    path('fatura/<int:pk>/', views.fatura_detay, name='fatura_detay'),
+    path('fatura/<int:pk>/duzenle/', views.fatura_duzenle, name='fatura_duzenle'),
+    path('fatura/<int:pk>/sil/', views.fatura_sil, name='fatura_sil'),
+    path('fatura/<int:pk>/pdf/', views.fatura_pdf, name='fatura_pdf'),
    
     # Cari silme
     path('cari/<int:pk>/sil/', views.cari_sil, name='cari_sil'),
@@ -69,12 +73,55 @@ urlpatterns = [
     path('yetkili/pos/<int:pk>/duzenle/', views.pos_duzenle, name='pos_duzenle'),
     
     # Cari hareket işlemleri
-    path('cari-hareket/', views.cari_hareket_list, name='cari_hareket_list'),
     path('cari-hareket/ekle/', views.cari_hareket_ekle, name='cari_hareket_ekle'),
+    path('cari-hareket/sil/<int:pk>/', views.cari_hareket_sil, name='cari_hareket_sil'),
+    path('cari-hareket/duzenle/<int:pk>/', views.cari_hareket_ekle, name='cari_hareket_duzenle'),
     path('cari/<int:cari_id>/hareketler/', views.cari_hareketler, name='cari_hareketler'),
+    path('cari-hareket/', views.cari_hareket_list, name='cari_hareket_list'),
+    path('cari-hareket/virman/', views.cari_virman, name='cari_virman'),
     
     # AJAX
     path('ajax/cari-ara/', views.cari_ara, name='cari_ara'),
     path('ajax/kasa-banka-getir/', views.kasa_banka_getir, name='kasa_banka_getir'),
+    path('fatura/stok-detay/<int:stok_id>/', views.get_stok_detay, name='get_stok_detay'),
+
+
+    path('api/cari-bakiye-detay/', views.cari_bakiye_detay, name='cari_bakiye_detay'),
+
+
+    # Genel stok seçenek URL'leri
+    path('yetkili/genel-stok-secenek/', views.genel_stok_secenek_list, name='genel_stok_secenek_list'),
+    path('ajax/genel-secenek-listesi/', views.genel_secenek_listesi_ajax, name='genel_secenek_listesi_ajax'),
+    path('stok/<int:stok_id>/genel-secenek-kopyala/', views.genel_secenek_kopyala, name='genel_secenek_kopyala'),
+    path('yetkili/genel-stok-secenek/ekle/', views.genel_stok_secenek_ekle, name='genel_stok_secenek_ekle'),
+    path('yetkili/genel-stok-secenek/deger/ekle/', views.genel_stok_secenek_deger_ekle, name='genel_stok_secenek_deger_ekle'),
+    path('yetkili/genel-stok-secenek/deger/<int:pk>/sil/', views.genel_stok_secenek_deger_sil, name='genel_stok_secenek_deger_sil'),
+    path('yetkili/genel-stok-secenek/deger/<int:pk>/duzenle/', views.genel_stok_secenek_deger_duzenle, name='genel_stok_secenek_deger_duzenle'),
+
+
+    path('stok/secenek/<int:pk>/sil/', views.stok_secenek_sil, name='stok_secenek_sil'),
+    path('yetkili/genel-stok-secenek/<int:pk>/sil/', views.genel_stok_secenek_sil, name='genel_stok_secenek_sil'),
+
+    # Stok grup işlemleri
+    path('stok/grup/', views.stok_grup_list, name='stok_grup_list'),
+    path('stok/grup/<int:pk>/duzenle/', views.stok_grup_duzenle, name='stok_grup_duzenle'),
+    path('stok/grup/<int:pk>/sil/', views.stok_grup_sil, name='stok_grup_sil'),
+    
+    path('ajax/stok-ara/', views.stok_ara, name='stok_ara'),
+   
+
+    # Stok işlemleri
+    path('stok/', views.stok_list, name='stok_list'),
+    path('stok/ekle/', views.stok_ekle, name='stok_ekle'),
+    path('stok/<int:pk>/duzenle/', views.stok_duzenle, name='stok_duzenle'),
+    path('stok/<int:pk>/sil/', views.stok_sil, name='stok_sil'),
+    path('stok/secenek/deger/<int:pk>/sil/', views.stok_secenek_deger_sil, name='stok_secenek_deger_sil'),
+    path('stok/secenek/deger/<int:pk>/duzenle/', views.stok_secenek_deger_duzenle, name='stok_secenek_deger_duzenle'),
+
+    # Stok AJAX işlemleri
+    path('stok/<int:stok_id>/grup-fiyat/ekle/', views.stok_grup_fiyat_ekle, name='stok_grup_fiyat_ekle'),
+    path('stok/grup-fiyat/<int:pk>/sil/', views.stok_grup_fiyat_sil, name='stok_grup_fiyat_sil'),
+    path('stok/<int:stok_id>/secenek/ekle/', views.stok_secenek_ekle, name='stok_secenek_ekle'),
+    path('stok/secenek/<int:secenek_id>/deger/ekle/', views.stok_secenek_deger_ekle, name='stok_secenek_deger_ekle'),
 
 ]

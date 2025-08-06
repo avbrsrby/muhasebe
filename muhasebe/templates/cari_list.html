@@ -21,10 +21,18 @@
                 <div class="row">
                     <!-- Genel Arama -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Genel Arama</label>
-                        <input type="text" class="form-control" name="arama" 
-                               placeholder="Ünvan, Kod, Yetkili, Vergi No..." 
-                               value="{{ filters.arama|default:'' }}">
+                        <label class="form-label">
+                            Genel Arama 
+                            <i class="bi bi-info-circle text-primary" 
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Arama yapılan alanlar: Ünvan, Cari Kodu, Yetkili Adı, Vergi No, TC Kimlik No, Telefon, E-posta, Adres"
+                            style="cursor: help;">
+                            </i>
+                        </label>
+                        <input type="text" class="form-control" name="cari_ara" 
+                            placeholder="Ünvan, Kod, Yetkili, Vergi No..." 
+                            value="{{ filters.arama|default:'' }}">
                     </div>
                     
                     <!-- Grup -->
@@ -121,10 +129,9 @@
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Sıralama</label>
                         <select class="form-control" name="siralama">
-                            <option value="kod" {% if filters.siralama == 'kod' %}selected{% endif %}>Kod</option>
                             <option value="unvan" {% if filters.siralama == 'unvan' %}selected{% endif %}>Ünvan</option>
-                            <option value="bakiye_artan" {% if filters.siralama == 'bakiye_artan' %}selected{% endif %}>Bakiye (Artan)</option>
-                            <option value="bakiye_azalan" {% if filters.siralama == 'bakiye_azalan' %}selected{% endif %}>Bakiye (Azalan)</option>
+                            <option value="bakiye_azalan" {% if filters.siralama == 'bakiye_azalan' or not filters.siralama %}selected{% endif %}>Bakiye (Yüksekten Düşüğe)</option>
+                            <option value="bakiye_artan" {% if filters.siralama == 'bakiye_artan' %}selected{% endif %}>Bakiye (Düşükten Yükseğe)</option>
                         </select>
                     </div>
                     
@@ -146,12 +153,14 @@
     </div>
 </div>
 
+<div><h4  style="text-align: center;">Seçilen filtrelere göre toplam bakiye bilgileri:</h4></div>
+
 <!-- Özet Bilgiler -->
 <div class="row mb-3">
     <div class="col-md-3">
         <div class="card bg-danger text-white">
             <div class="card-body">
-                <h6>Toplam Borç</h6>
+                <h6>Toplam Çıkış</h6>
                 <h4>{{ toplam_borc|floatformat:2 }} ₺</h4>
             </div>
         </div>
@@ -159,7 +168,7 @@
     <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body">
-                <h6>Toplam Alacak</h6>
+                <h6>Toplam Giriş</h6>
                 <h4>{{ toplam_alacak|floatformat:2 }} ₺</h4>
             </div>
         </div>
@@ -220,7 +229,7 @@
                                 <th>Yetkili</th>
                                 <th>Telefon</th>
                                 <th>İl/İlçe</th>
-                                <th>Bakiye</th>
+                                <th>Bakiye (TL)</th>
                                 <th>Durum</th>
                                 <th width="120">İşlemler</th>
                             </tr>
@@ -246,10 +255,8 @@
                                         -
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <span class="text-{% if cari.bakiye < 0 %}danger{% elif cari.bakiye > 0 %}success{% else %}muted{% endif %}">
-                                        {{ cari.bakiye|floatformat:2 }} ₺
-                                    </span>
+                               <td class="{% if cari.bakiye_hesaplanan > 0 %}text-success{% elif cari.bakiye_hesaplanan < 0 %}text-danger{% endif %}">
+                                    <strong>{{ cari.bakiye_hesaplanan|default:cari.bakiye|floatformat:2 }} TL</strong>
                                 </td>
                                 <td>
                                     {% if cari.aktif %}
@@ -285,10 +292,107 @@
         </div>
     </div>
 
-    <!-- Cari Grupları Tab'ı (mevcut kodunuz) -->
-    <div class="tab-pane fade" id="cari-grup" role="tabpanel">
-        <!-- Mevcut grup yönetimi kodları -->
+    <!-- Cari Grupları Tab'ı -->
+<div class="tab-pane fade" id="cari-grup" role="tabpanel">
+    <div class="card mt-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Yeni Grup Ekle</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'cari_grup_list' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="form-label">Grup Adı</label>
+                                    <input type="text" name="ad" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Üst Grup</label>
+                                    <select name="ust_grup" class="form-control">
+                                        <option value="">Ana Grup</option>
+                                        {% for grup in gruplar %}
+                                            <option value="{{ grup.id }}">{{ grup.ad }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="text-muted">Ana grup için boş bırakın</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-plus-circle"></i> Grup Ekle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Mevcut Gruplar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Kod</th>
+                                            <th>Grup Adı</th>
+                                            <th>Üst Grup</th>
+                                            <th>Seviye</th>
+                                            <th width="120">İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for grup in gruplar %}
+                                        <tr>
+                                            <td>{{ grup.kod }}</td>
+                                            <td>
+                                                {% if grup.seviye == 2 %}
+                                                    &nbsp;&nbsp;&nbsp;&nbsp;└─ {{ grup.ad }}
+                                                {% elif grup.seviye == 3 %}
+                                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ {{ grup.ad }}
+                                                {% else %}
+                                                    <strong>{{ grup.ad }}</strong>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ grup.ust_grup.ad|default:'-' }}</td>
+                                            <td>
+                                                {% if grup.seviye == 1 %}
+                                                    <span class="badge bg-primary">Ana Grup</span>
+                                                {% elif grup.seviye == 2 %}
+                                                    <span class="badge bg-success">Ara Grup</span>
+                                                {% else %}
+                                                    <span class="badge bg-info">Alt Grup</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'cari_grup_duzenle' grup.pk %}" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'cari_grup_sil' grup.pk %}" 
+                                                    class="btn btn-sm btn-danger"
+                                                    onclick="return confirm('Bu grubu silmek istediğinize emin misiniz?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center">Henüz grup tanımlanmamış.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 </div>
 {% endblock %}
 
@@ -316,5 +420,60 @@ document.getElementById('filter_il').addEventListener('change', function() {
             });
     }
 });
+
+
+// Otomatik filtreleme için
+$(document).ready(function() {
+
+    // F5 ile cari seçildiğinde otomatik filtreleme
+$(document).on('input change', '[name="cari_ara"]', function() {
+    // Eğer değer F5 modalından geliyorsa (programatik değişim)
+    if ($(this).data('from-modal')) {
+        $('#filterForm').submit();
+        $(this).data('from-modal', false);
+    }
+});
+
+// Global cari modal kapatıldığında kontrol et
+$('#globalCariSearchModal').on('hide.bs.modal', function() {
+    if ($('[name="cari_ara"]').val()) {
+        $('[name="cari_ara"]').data('from-modal', true).trigger('change');
+    }
+});
+
+
+
+    // Form elemanları değiştiğinde otomatik submit
+    $('#filterForm select, #filterForm input[type="text"], #filterForm input[type="number"]').on('change', function() {
+        // İl değiştiğinde ilçe yüklenene kadar bekle
+        if ($(this).attr('id') === 'filter_il') {
+            setTimeout(function() {
+                $('#filterForm').submit();
+            }, 500);
+        } else {
+            $('#filterForm').submit();
+        }
+    });
+    
+    // Text inputlar için debounce ekleyelim (yazma bitince filtrele)
+    var timeout;
+    $('#filterForm input[type="text"]').on('keyup', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+            $('#filterForm').submit();
+        }, 500); // 500ms bekle
+    });
+    
+    // Number inputlar için
+    $('#filterForm input[type="number"]').on('keyup', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+            $('#filterForm').submit();
+        }, 500);
+    });
+});
+
+
+
 </script>
 {% endblock %}
